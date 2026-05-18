@@ -415,6 +415,69 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+
+        /* 开关切换按钮 */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .switch-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .switch-label.active {
+            color: #667eea;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -516,6 +579,19 @@
                 </div>
             </div>
 
+            <!-- 随机内容开关 -->
+            <div class="form-group">
+                <label>🎲 每日随机提醒内容</label>
+                <div class="switch-container">
+                    <label class="switch">
+                        <input type="checkbox" id="randomContentToggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="switch-label" id="randomContentLabel">关闭（使用上方自定义内容）</span>
+                </div>
+                <small>开启后，每天从内置的 8 条上下班提醒中随机选择一条发送</small>
+            </div>
+
             <!-- 保存按钮 -->
             <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
 
@@ -557,8 +633,49 @@
             title: '打卡提醒',
             morningContent: '宝贝，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕',
             eveningContent: '宝贝，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💖',
+            useRandomContent: false, // 是否使用随机内容
             lastReminder: null
         };
+
+        // 内置上班提醒内容（8条）
+        const MORNING_MESSAGES = [
+            '宝贝，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕',
+            '亲爱的，该打卡上班啦~ 🌸\n今天也要元气满满哦！\n爱你~ 💖',
+            '老婆大人，早上好~ 🌞\n记得打卡，开始美好的一天吧！\n我在家等你回来~ 💗',
+            '早安，我的宝贝~ ☕\n记得打卡上班哦~\n今天也要开心，我会想你的~ 💓',
+            '早上好呀宝贝~ 🌅\n打卡时间到啦！\n今天也要努力工作哦，加油！💪\n爱你哦~ 💕',
+            '宝贝起床啦~ ⏰\n记得打卡上班哦！\n新的一天，新的开始，冲鸭！🦆\n想你~ 💖',
+            '早安亲爱的~ 🌤️\n打卡别忘记啦~\n今天也要开开心心的！\n我在想你哦~ 💗',
+            '早上好~ ☀️\n今天是美好的一天！\n记得打卡，然后元气满满地工作吧！\n爱你~ 💓'
+        ];
+
+        // 内置下班提醒内容（8条）
+        const EVENING_MESSAGES = [
+            '宝贝，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💕',
+            '亲爱的，该下班打卡啦~ 🌟\n辛苦一天了，放松一下吧~\n爱你哦~ 💖',
+            '老婆，记得下班打卡哦~ 🏠\n工作辛苦了，马上就能休息啦！\n我在家里想你~ 💗',
+            '下班时间到~ 🎉\n记得打卡，然后就可以放松啦！\n今天也要好好休息哦~ 💓',
+            '宝贝，下班啦~ 🌆\n记得打卡哦！\n今天辛苦了，晚上好好放松~ 💕',
+            '亲爱的，该下班啦~ 🌇\n打卡别忘记！\n回家好好休息，我在等你~ 💖',
+            '下班时间到啦~ 🎊\n记得打卡下班哦！\n今天也辛苦了，晚上好好放松~ 💗',
+            '宝贝，下班啦~ 🌙\n记得打卡，然后就可以休息啦！\n今天辛苦了，爱你~ 💓'
+        ];
+
+        // 获取今天的随机消息（同一天保持一致）
+        function getTodaysRandomMessage(messages) {
+            const today = new Date().toDateString();
+            const storageKey = `daily_${messages === MORNING_MESSAGES ? 'morning' : 'evening'}_${today}`;
+            
+            let cached = localStorage.getItem(storageKey);
+            if (cached) {
+                return cached;
+            }
+            
+            const randomIndex = Math.floor(Math.random() * messages.length);
+            const selected = messages[randomIndex];
+            localStorage.setItem(storageKey, selected);
+            return selected;
+        }
 
         let reminderTimer = null;
         let lastCheckedDate = null;
@@ -611,6 +728,10 @@
                     document.getElementById('lastReminder').textContent =
                         `最近提醒：${new Date(config.lastReminder).toLocaleString()}`;
                 }
+
+                // 恢复随机内容开关
+                document.getElementById('randomContentToggle').checked = config.useRandomContent || false;
+                updateRandomContentLabel();
             }
         }
 
@@ -650,6 +771,7 @@
             config.title = document.getElementById('title').value.trim() || '打卡提醒';
             config.morningContent = document.getElementById('morningContent').value.trim() || '宝贝，早上好~ 记得打卡上班哦！';
             config.eveningContent = document.getElementById('eveningContent').value.trim() || '宝贝，下班时间到啦~ 记得打卡下班！';
+            config.useRandomContent = document.getElementById('randomContentToggle').checked;
 
             // 收集时间
             config.times = [];
@@ -707,6 +829,24 @@
                     item.classList.toggle('active');
                 });
             });
+
+            // 随机内容开关
+            document.getElementById('randomContentToggle').addEventListener('change', function() {
+                updateRandomContentLabel();
+            });
+        }
+
+        // 更新随机内容开关标签
+        function updateRandomContentLabel() {
+            const toggle = document.getElementById('randomContentToggle');
+            const label = document.getElementById('randomContentLabel');
+            if (toggle.checked) {
+                label.textContent = '开启（每天随机选择内置提醒）';
+                label.classList.add('active');
+            } else {
+                label.textContent = '关闭（使用上方自定义内容）';
+                label.classList.remove('active');
+            }
         }
 
         // 添加时间
@@ -796,7 +936,16 @@
 
         // 根据时间自动判断使用上班还是下班提醒内容
         function getContentByTime(hour) {
-            // 12:00 之前使用上班提醒，之后使用下班提醒
+            // 如果开启随机内容，从内置消息中随机选择（每天固定一条）
+            if (config.useRandomContent) {
+                if (hour < 12) {
+                    return getTodaysRandomMessage(MORNING_MESSAGES);
+                } else {
+                    return getTodaysRandomMessage(EVENING_MESSAGES);
+                }
+            }
+            
+            // 否则使用用户自定义内容
             if (hour < 12) {
                 return config.morningContent;
             } else {
