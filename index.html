@@ -1272,6 +1272,33 @@
             }
         }
 
+        // 格式化天气信息
+        function formatWeatherInfo(data, type) {
+            if (type === 'today' && data.now) {
+                const now = data.now;
+                let info = `🌡️ 温度：${now.temp}°C（体感 ${now.feelsLike}°C）\n`;
+                info += `☁️ 天气：${now.text}\n`;
+                info += `💨 ${now.windDir} ${now.windScale}级`;
+                if (now.humidity) {
+                    info += `\n💧 湿度：${now.humidity}%`;
+                }
+                return info;
+            } else if (type === 'tomorrow' && data.daily && data.daily.length > 0) {
+                const daily = data.daily[0];
+                let info = `🌡️ 温度：${daily.tempMin}°C ~ ${daily.tempMax}°C\n`;
+                info += `☁️ 白天：${daily.textDay}\n`;
+                info += `🌙 夜间：${daily.textNight}`;
+                if (daily.windDirDay) {
+                    info += `\n💨 ${daily.windDirDay} ${daily.windScaleDay}级`;
+                }
+                if (daily.uvIndex) {
+                    info += `\n☀️ 紫外线指数：${daily.uvIndex}`;
+                }
+                return info;
+            }
+            return '';
+        }
+
         // 格式化时间
         function formatTime(hours, minutes) {
             return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
