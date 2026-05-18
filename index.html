@@ -587,18 +587,14 @@
             <!-- 地点设置 -->
             <div class="form-group">
                 <label>📍 天气预报地点</label>
-                <div class="location-selector">
-                    <select id="province" onchange="onProvinceChange()">
-                        <option value="">请选择省份</option>
-                    </select>
-                    <select id="city" onchange="onCityChange()" disabled>
-                        <option value="">请选择城市</option>
-                    </select>
-                    <select id="county" onchange="onCountyChange()" disabled>
-                        <option value="">请选择区县</option>
-                    </select>
+                <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+                    <input type="text" id="citySearch" placeholder="输入城市名称搜索（如：北京、深圳南山）" style="flex: 1; padding: 10px 12px; border: 2px solid #e1e1e1; border-radius: 10px; font-size: 14px;">
+                    <button class="btn btn-secondary btn-sm" onclick="searchCity()" style="white-space: nowrap;">🔍 搜索</button>
                 </div>
-                <small>选择省市县后，上下班提醒将自动附带天气预报</small>
+                <select id="citySelect" style="width: 100%; padding: 10px 12px; border: 2px solid #e1e1e1; border-radius: 10px; font-size: 14px; margin-bottom: 12px; display: none;">
+                    <option value="">请选择城市</option>
+                </select>
+                <small>搜索并选择城市后，上下班提醒将自动附带天气预报</small>
                 <button class="btn btn-secondary btn-sm" onclick="testWeather()" style="margin-top: 10px;">🧪 测试天气获取</button>
             </div>
 
