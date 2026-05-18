@@ -478,6 +478,35 @@
             color: #667eea;
             font-weight: 600;
         }
+
+        /* 省市县三级联动选择器 */
+        .location-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .location-selector select {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .location-selector select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .location-selector select:disabled {
+            background: #f5f5f5;
+            cursor: not-allowed;
+            color: #999;
+        }
     </style>
 </head>
 <body>
@@ -557,9 +586,19 @@
 
             <!-- 地点设置 -->
             <div class="form-group">
-                <label>📍 天气预报地点（省市县）</label>
-                <input type="text" id="location" placeholder="例如：北京、上海浦东、深圳南山" style="width: 100%; padding: 12px 16px; border: 2px solid #e1e1e1; border-radius: 10px; font-size: 16px;">
-                <small>设置后，上下班提醒将自动附带天气预报</small>
+                <label>📍 天气预报地点</label>
+                <div class="location-selector">
+                    <select id="province" onchange="onProvinceChange()">
+                        <option value="">请选择省份</option>
+                    </select>
+                    <select id="city" onchange="onCityChange()" disabled>
+                        <option value="">请选择城市</option>
+                    </select>
+                    <select id="county" onchange="onCountyChange()" disabled>
+                        <option value="">请选择区县</option>
+                    </select>
+                </div>
+                <small>选择省市县后，上下班提醒将自动附带天气预报</small>
                 <button class="btn btn-secondary btn-sm" onclick="testWeather()" style="margin-top: 10px;">🧪 测试天气获取</button>
             </div>
 
@@ -637,6 +676,7 @@
     <!-- Toast 提示 -->
     <div class="toast" id="toast"></div>
 
+    <script src="city-data.js"></script>
     <script>
         // 配置对象
         let config = {
@@ -697,6 +737,7 @@
 
         // 初始化
         function init() {
+            initProvinceSelector(); // 初始化省份下拉框
             loadConfig();
             setupEventListeners();
             startReminder();
@@ -720,6 +761,11 @@
                 document.getElementById('location').value = config.location || '';
                 document.getElementById('morningContent').value = config.morningContent || '宝贝，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕';
                 document.getElementById('eveningContent').value = config.eveningContent || '宝贝，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💖';
+
+                // 恢复地点选择（省市县）
+                if (config.location) {
+                    restoreLocationSelector(config.location);
+                }
 
                 // 恢复时间列表
                 const timeList = document.getElementById('timeList');
@@ -863,6 +909,41 @@
             } else {
                 label.textContent = '关闭（使用上方自定义内容）';
                 label.classList.remove('active');
+            }
+        }
+
+        // 恢复地点选择器
+        function restoreLocationSelector(location) {
+            if (!location) return;
+
+            // 遍历所有省份，查找匹配的城市/区县
+            for (const [province, cities] of Object.entries(CITY_DATA)) {
+                for (const [city, counties] of Object.entries(cities)) {
+                    if (counties.includes(location)) {
+                        // 找到区县
+                        document.getElementById('province').value = province;
+                        onProvinceChange();
+                        setTimeout(() => {
+                            document.getElementById('city').value = city;
+                            onCityChange();
+                            setTimeout(() => {
+                                document.getElementById('county').value = location;
+                                onCountyChange();
+                            }, 100);
+                        }, 100);
+                        return;
+                    }
+                    if (city === location) {
+                        // 找到城市
+                        document.getElementById('province').value = province;
+                        onProvinceChange();
+                        setTimeout(() => {
+                            document.getElementById('city').value = city;
+                            onCityChange();
+                        }, 100);
+                        return;
+                    }
+                }
             }
         }
 
