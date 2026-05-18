@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<!--
+================================================================================
+打卡提醒 - PushPlus 微信推送应用
+================================================================================
+
+功能说明：
+- 用户可配置 PushPlus Token、提醒时间、提醒日期和提醒内容
+- 每天定时推送微信消息提醒打卡
+- 配置保存在浏览器本地（localStorage）
+
+部署到 GitHub Pages：
+1. 登录 GitHub，创建新仓库（例如：punch-reminder）
+2. 上传本文件 index.html 到仓库根目录
+3. 进入仓库 Settings → Pages
+4. Source 选择 "Deploy from a branch"，Branch 选择 "main"，文件夹选择 "/ (root)"
+5. 点击 Save，等待部署完成
+6. 访问 https://你的用户名.github.io/仓库名/
+
+注意：由于浏览器定时器在页面关闭后不运行，建议：
+- 使用 GitHub Actions + 服务器定时任务调用 PushPlus API
+- 或使用 Vercel/Netlify 等支持定时任务的服务
+- 或保持浏览器页面常开
+
+================================================================================
+-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打卡提醒 - PushPlus 微信推送</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="time"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-group small {
+            display: block;
+            color: #888;
+            margin-top: 6px;
+            font-size: 12px;
+        }
+
+        .time-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .time-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .time-input input {
+            padding: 10px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .time-input input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .time-input button {
+            padding: 10px 14px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background 0.3s;
+        }
+
+        .time-input button:hover {
+            background: #e0e0e0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .btn-sm {
+            padding: 6px 10px;
+            font-size: 14px;
+        }
+
+        .date-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .date-option {
+            padding: 12px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .date-option:hover {
+            border-color: #667eea;
+        }
+
+        .date-option.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .date-option input {
+            display: none;
+        }
+
+        .weekday-selector {
+            margin-top: 12px;
+            display: none;
+        }
+
+        .weekday-selector.show {
+            display: block;
+        }
+
+        .weekday-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .weekday-item {
+            padding: 8px 14px;
+            border: 2px solid #e1e1e1;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .weekday-item:hover {
+            border-color: #667eea;
+        }
+
+        .weekday-item.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .status-bar {
+            margin-top: 24px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .status-dot.active {
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .last-reminder {
+            color: #888;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .modal-content p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 30px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1001;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .test-btn {
+            margin-top: 8px;
+        }
+
+        .token-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .token-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .token-item input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .token-item input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .token-item button {
+            padding: 10px 12px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .token-item button:hover {
+            background: #ff3344;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .content-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .content-toggle .btn-sm {
+            flex: 1;
+        }
+
+        .content-toggle .btn-sm.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        @media (max-width: 480px) {
+            .date-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⏰ 打卡提醒</h1>
+            <p>使用 PushPlus 定时推送微信消息</p>
+        </div>
+
+        <div class="content">
+            <!-- Token 配置 -->
+            <div class="form-group">
+                <label>PushPlus Token（支持多个）</label>
+                <div class="token-list" id="tokenList">
+                    <div class="token-item">
+                        <input type="text" class="token-input" placeholder="请输入 PushPlus Token">
+                        <button onclick="removeToken(this)">删除</button>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="addToken()" style="margin-top: 10px;">➕ 添加 Token</button>
+                <small>前往 <a href="http://www.pushplus.plus/" target="_blank">pushplus.plus</a> 微信扫码登录获取 Token</small>
+                <button class="btn btn-secondary btn-sm test-btn" onclick="testPush()">🧪 测试推送</button>
+            </div>
+
+            <!-- 提醒时间 -->
+            <div class="form-group">
+                <label>提醒时间（可添加多个）</label>
+                <div class="time-list" id="timeList">
+                    <div class="time-input">
+                        <input type="time" value="08:00">
+                        <button onclick="removeTime(this)">×</button>
+                    </div>
+                    <div class="time-input">
+                        <input type="time" value="18:00">
+                        <button onclick="removeTime(this)">×</button>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="addTime()" style="margin-top: 10px;">➕ 添加时间</button>
+            </div>
+
+            <!-- 提醒日期 -->
+            <div class="form-group">
+                <label>提醒日期</label>
+                <div class="date-options">
+                    <label class="date-option active">
+                        <input type="radio" name="dateMode" value="everyday" checked>
+                        每天
+                    </label>
+                    <label class="date-option">
+                        <input type="radio" name="dateMode" value="workday">
+                        工作日
+                    </label>
+                    <label class="date-option">
+                        <input type="radio" name="dateMode" value="custom">
+                        自定义
+                    </label>
+                </div>
+                <div class="weekday-selector" id="weekdaySelector">
+                    <small style="margin: 12px 0 8px; display: block;">选择提醒的星期：</small>
+                    <div class="weekday-list">
+                        <span class="weekday-item" data-day="1">周一</span>
+                        <span class="weekday-item" data-day="2">周二</span>
+                        <span class="weekday-item" data-day="3">周三</span>
+                        <span class="weekday-item" data-day="4">周四</span>
+                        <span class="weekday-item" data-day="5">周五</span>
+                        <span class="weekday-item" data-day="6">周六</span>
+                        <span class="weekday-item" data-day="0">周日</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 提醒标题 -->
+            <div class="form-group">
+                <label>提醒标题（上班/下班通用）</label>
+                <input type="text" id="title" value="打卡提醒" placeholder="输入提醒标题">
+            </div>
+
+            <!-- 提醒内容 -->
+            <div class="form-group">
+                <label>🌅 上班提醒内容（12:00 前发送）</label>
+                <textarea id="morningContent" placeholder="早上打卡提醒内容">宝贝，早上好呀~ ☀️
+记得打卡上班哦，新的一天加油！
+我会一直想你的~ 💕</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>🌙 下班提醒内容（12:00 后发送）</label>
+                <textarea id="eveningContent" placeholder="晚上打卡提醒内容">宝贝，下班时间到啦~ 🌙
+记得打卡下班，今天辛苦了！
+回家好好休息，我在等你~ 💖</textarea>
+            </div>
+
+            <!-- 快速填充温柔提醒词 -->
+            <div class="form-group">
+                <label>💡 快速填充内置提醒词</label>
+                <div class="content-toggle">
+                    <button class="btn btn-secondary btn-sm" onclick="fillMorningContent()">🌅 填充上班提醒词</button>
+                    <button class="btn btn-secondary btn-sm" onclick="fillEveningContent()">🌙 填充下班提醒词</button>
+                </div>
+            </div>
+
+            <!-- 保存按钮 -->
+            <button class="btn btn-primary" onclick="saveConfig()">💾 保存配置</button>
+
+            <!-- 状态栏 -->
+            <div class="status-bar">
+                <div class="status-indicator">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">未启动</span>
+                </div>
+                <div class="last-reminder" id="lastReminder">最近提醒：无</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>⚠️ 注意：浏览器关闭后定时器将停止，建议部署到服务器</p>
+            <p><a href="https://github.com" target="_blank">部署到 GitHub Pages</a></p>
+        </div>
+    </div>
+
+    <!-- 测试推送模态框 -->
+    <div class="modal" id="testModal">
+        <div class="modal-content">
+            <h3>推送结果</h3>
+            <p id="testResult">正在测试...</p>
+            <button class="btn btn-primary" onclick="closeModal()">确定</button>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // 配置对象
+        let config = {
+            tokens: [],
+            times: ['08:00', '18:00'],
+            dateMode: 'everyday', // everyday, workday, custom
+            customDays: [], // 0-6, 周日到周六
+            title: '打卡提醒',
+            morningContent: '宝贝，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕',
+            eveningContent: '宝贝，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💖',
+            lastReminder: null
+        };
+
+        let reminderTimer = null;
+        let lastCheckedDate = null;
+
+        // 初始化
+        function init() {
+            loadConfig();
+            setupEventListeners();
+            startReminder();
+        }
+
+        // 加载配置
+        function loadConfig() {
+            const saved = localStorage.getItem('punchReminderConfig');
+            if (saved) {
+                config = JSON.parse(saved);
+                // 恢复 Token 列表
+                const tokenList = document.getElementById('tokenList');
+                tokenList.innerHTML = '';
+                if (config.tokens && config.tokens.length > 0) {
+                    config.tokens.forEach(token => addToken(token));
+                } else {
+                    addToken('');
+                }
+                // 恢复标题和内容
+                document.getElementById('title').value = config.title || '打卡提醒';
+                document.getElementById('morningContent').value = config.morningContent || '宝贝，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕';
+                document.getElementById('eveningContent').value = config.eveningContent || '宝贝，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💖';
+
+                // 恢复时间列表
+                const timeList = document.getElementById('timeList');
+                timeList.innerHTML = '';
+                config.times.forEach(time => addTime(time));
+
+                // 恢复日期模式
+                document.querySelectorAll('.date-option').forEach(opt => {
+                    opt.classList.toggle('active', opt.querySelector('input').value === config.dateMode);
+                });
+
+                // 恢复自定义星期
+                if (config.dateMode === 'custom') {
+                    document.getElementById('weekdaySelector').classList.add('show');
+                    document.querySelectorAll('.weekday-item').forEach(item => {
+                        item.classList.toggle('active', config.customDays.includes(parseInt(item.dataset.day)));
+                    });
+                }
+
+                // 恢复最后提醒时间
+                if (config.lastReminder) {
+                    document.getElementById('lastReminder').textContent =
+                        `最近提醒：${new Date(config.lastReminder).toLocaleString()}`;
+                }
+            }
+        }
+
+        // 添加 Token 输入框
+        function addToken(defaultValue = '') {
+            const tokenList = document.getElementById('tokenList');
+            const div = document.createElement('div');
+            div.className = 'token-item';
+            div.innerHTML = `
+                <input type="text" class="token-input" placeholder="请输入 PushPlus Token" value="${defaultValue}">
+                <button onclick="removeToken(this)">删除</button>
+            `;
+            tokenList.appendChild(div);
+        }
+
+        // 移除 Token 输入框
+        function removeToken(btn) {
+            const container = document.getElementById('tokenList');
+            if (container.children.length > 1) {
+                btn.parentElement.remove();
+            } else {
+                showToast('至少保留一个 Token 输入框');
+            }
+        }
+
+        // 保存配置
+        function saveConfig() {
+            // 收集 Token 列表
+            config.tokens = [];
+            document.querySelectorAll('.token-input').forEach(input => {
+                const token = input.value.trim();
+                if (token && !config.tokens.includes(token)) {
+                    config.tokens.push(token);
+                }
+            });
+
+            config.title = document.getElementById('title').value.trim() || '打卡提醒';
+            config.morningContent = document.getElementById('morningContent').value.trim() || '宝贝，早上好~ 记得打卡上班哦！';
+            config.eveningContent = document.getElementById('eveningContent').value.trim() || '宝贝，下班时间到啦~ 记得打卡下班！';
+
+            // 收集时间
+            config.times = [];
+            document.querySelectorAll('#timeList input[type="time"]').forEach(input => {
+                if (input.value) config.times.push(input.value);
+            });
+
+            if (config.tokens.length === 0) {
+                showToast('请至少输入一个 PushPlus Token');
+                return;
+            }
+
+            if (config.times.length === 0) {
+                showToast('请至少设置一个提醒时间');
+                return;
+            }
+
+            // 收集日期模式
+            const selectedMode = document.querySelector('.date-option.active input');
+            config.dateMode = selectedMode ? selectedMode.value : 'everyday';
+
+            // 收集自定义星期
+            if (config.dateMode === 'custom') {
+                config.customDays = [];
+                document.querySelectorAll('.weekday-item.active').forEach(item => {
+                    config.customDays.push(parseInt(item.dataset.day));
+                });
+                if (config.customDays.length === 0) {
+                    showToast('请至少选择一个提醒的星期');
+                    return;
+                }
+            }
+
+            localStorage.setItem('punchReminderConfig', JSON.stringify(config));
+            showToast('✅ 配置已保存');
+            startReminder();
+        }
+
+        // 设置事件监听
+        function setupEventListeners() {
+            // 日期选项点击
+            document.querySelectorAll('.date-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    document.querySelectorAll('.date-option').forEach(o => o.classList.remove('active'));
+                    opt.classList.add('active');
+
+                    const mode = opt.querySelector('input').value;
+                    document.getElementById('weekdaySelector').classList.toggle('show', mode === 'custom');
+                });
+            });
+
+            // 星期选择
+            document.querySelectorAll('.weekday-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    item.classList.toggle('active');
+                });
+            });
+        }
+
+        // 添加时间
+        function addTime(defaultValue = '') {
+            const timeList = document.getElementById('timeList');
+            const div = document.createElement('div');
+            div.className = 'time-input';
+            div.innerHTML = `
+                <input type="time" value="${defaultValue}">
+                <button onclick="removeTime(this)">×</button>
+            `;
+            timeList.appendChild(div);
+        }
+
+        // 移除时间
+        function removeTime(btn) {
+            const container = document.getElementById('timeList');
+            if (container.children.length > 1) {
+                btn.parentElement.remove();
+            } else {
+                showToast('至少保留一个时间点');
+            }
+        }
+
+        // 启动定时提醒
+        function startReminder() {
+            if (reminderTimer) {
+                clearInterval(reminderTimer);
+            }
+
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+
+            if (!config.tokens || config.tokens.length === 0) {
+                statusDot.classList.remove('active');
+                statusText.textContent = '未配置 Token';
+                return;
+            }
+
+            statusDot.classList.add('active');
+            statusText.textContent = '运行中';
+            lastCheckedDate = new Date().toDateString();
+
+            reminderTimer = setInterval(checkAndSendReminder, 60000); // 每分钟检查一次
+            checkAndSendReminder(); // 立即执行一次
+        }
+
+        // 检查并发送提醒
+        function checkAndSendReminder() {
+            const now = new Date();
+            const currentTime = formatTime(now.getHours(), now.getMinutes());
+            const currentDay = now.getDay();
+            const currentHour = now.getHours();
+
+            // 检查是否需要发送
+            let shouldSend = false;
+
+            if (config.dateMode === 'everyday') {
+                shouldSend = true;
+            } else if (config.dateMode === 'workday') {
+                shouldSend = currentDay >= 1 && currentDay <= 5;
+            } else if (config.dateMode === 'custom') {
+                shouldSend = config.customDays.includes(currentDay);
+            }
+
+            if (!shouldSend) return;
+
+            // 检查时间匹配
+            if (config.times.includes(currentTime)) {
+                const today = now.toDateString();
+                const reminderKey = `reminder_${currentTime}_${today}`;
+
+                // 检查今天是否已提醒
+                if (!localStorage.getItem(reminderKey)) {
+                    // 根据时间自动判断是上班还是下班提醒
+                    const content = getContentByTime(currentHour);
+                    // 传递 currentHour 用于决定 HTML 页面风格
+                    sendPushNotification(content, currentHour);
+                    localStorage.setItem(reminderKey, 'true');
+                    config.lastReminder = now.toISOString();
+                    document.getElementById('lastReminder').textContent =
+                        `最近提醒：${now.toLocaleString()}`;
+                    localStorage.setItem('punchReminderConfig', JSON.stringify(config));
+                }
+            }
+        }
+
+        // 根据时间自动判断使用上班还是下班提醒内容
+        function getContentByTime(hour) {
+            // 12:00 之前使用上班提醒，之后使用下班提醒
+            if (hour < 12) {
+                return config.morningContent;
+            } else {
+                return config.eveningContent;
+            }
+        }
+
+        // 格式化时间
+        function formatTime(hours, minutes) {
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        // 发送推送通知（发送给所有 Token）
+        async function sendPushNotification(content, hour) {
+            // 生成 HTML 网页内容
+            const htmlContent = generateRomanticHTML(content, hour);
+
+            // Vercel 代理地址（相对路径，自动适配域名）
+            const PROXY_URL = '/api/proxy';
+
+            const promises = config.tokens.map(async (token) => {
+                // 通过 Vercel 代理调用 PushPlus API（解决 CORS 问题）
+                const url = `${PROXY_URL}?token=${token}&title=${encodeURIComponent(config.title)}&content=${encodeURIComponent(htmlContent)}&type=html`;
+
+                try {
+                    const response = await fetch(url);
+                    const text = await response.text();
+                    console.log(`Push to ${token}:`, text);
+                    return { token, success: true, response: text };
+                } catch (error) {
+                    console.error(`Failed to send to ${token}:`, error);
+                    return { token, success: false, error: error.message };
+                }
+            });
+
+            const results = await Promise.all(promises);
+            console.log('All push results:', results);
+            return results;
+        }
+
+        // 生成温馨浪漫的 HTML 提醒页面
+        function generateRomanticHTML(content, hour) {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+            const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            const isMorning = hour < 12;
+
+            const bgColor = isMorning ? '#fff8e1' : '#1a1a2e';
+            const cardColor = isMorning ? '#ffffff' : '#2d2d44';
+            const textColor = isMorning ? '#333' : '#e0e0e0';
+            const accentColor = isMorning ? '#ff9800' : '#9c27b0';
+
+            return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${config.title}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: ${bgColor};
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .card {
+            background: ${cardColor};
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .emoji {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        .title {
+            color: ${accentColor};
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .content {
+            color: ${textColor};
+            font-size: 16px;
+            line-height: 1.8;
+            margin: 20px 0;
+            white-space: pre-wrap;
+        }
+        .footer {
+            color: #999;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+        .heart {
+            color: #e91e63;
+            animation: heartbeat 1.5s infinite;
+        }
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="emoji">${isMorning ? '☀️' : '🌙'}</div>
+        <div class="title">${config.title}</div>
+        <div class="content">${content.replace(/\n/g, '<br>')}</div>
+        <div class="footer">
+            ${dateStr} ${timeStr}<br>
+            <span class="heart">❤️</span> 来自宝贝的提醒 <span class="heart">❤️</span>
+        </div>
+    </div>
+</body>
+</html>`;
+        }
+
+        // 测试推送（发送到所有 Token）
+        async function testPush() {
+            const tokens = [];
+            document.querySelectorAll('.token-input').forEach(input => {
+                const token = input.value.trim();
+                if (token && !tokens.includes(token)) {
+                    tokens.push(token);
+                }
+            });
+            const title = document.getElementById('title').value.trim() || '测试推送';
+
+            if (tokens.length === 0) {
+                showToast('请先输入 PushPlus Token');
+                return;
+            }
+
+            // 根据当前时间决定测试哪个内容
+            const now = new Date();
+            const currentHour = now.getHours();
+            const testContent = getContentByTime(currentHour);
+            const timeType = currentHour < 12 ? '上班' : '下班';
+
+            // 生成 HTML 内容
+            const htmlContent = generateRomanticHTML(testContent, currentHour);
+
+            // Vercel 代理地址（相对路径）
+            const PROXY_URL = '/api/proxy';
+
+            document.getElementById('testModal').classList.add('show');
+            document.getElementById('testResult').innerHTML = `正在测试推送【${timeType}提醒(HTML)】到 ${tokens.length} 个 Token...`;
+
+            let successCount = 0;
+            let failCount = 0;
+            const results = [];
+
+            for (const token of tokens) {
+                // 通过 Vercel 代理调用
+                const url = `${PROXY_URL}?token=${token}&title=${encodeURIComponent('[测试] ' + title)}&content=${encodeURIComponent(htmlContent)}&type=html`;
+
+                try {
+                    const response = await fetch(url);
+                    const text = await response.text();
+
+                    if (text.includes('"code":200') || text.includes('"code":0') || response.ok) {
+                        successCount++;
+                        results.push(`✅ ${token.substring(0, 8)}...`);
+                    } else {
+                        failCount++;
+                        results.push(`❌ ${token.substring(0, 8)}...`);
+                    }
+                } catch (error) {
+                    failCount++;
+                    results.push(`❌ ${token.substring(0, 8)}... (${error.message})`);
+                }
+            }
+
+            document.getElementById('testResult').innerHTML = `
+                <strong>推送完成（${timeType}提醒测试）</strong><br><br>
+                ✅ 成功: ${successCount}<br>
+                ❌ 失败: ${failCount}<br><br>
+                <small>${results.join('<br>')}</small>
+            `;
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('testModal').classList.remove('show');
+        }
+
+        // 快速填充上班提醒词
+        function fillMorningContent() {
+            const morningTexts = [
+                '宝贝，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕',
+                '亲爱的，该打卡上班啦~ 🌸\n今天也要元气满满哦！\n爱你~ 💖',
+                '老婆大人，早上好~ 🌞\n记得打卡，开始美好的一天吧！\n我在家等你回来~ 💗',
+                '早安，我的宝贝~ ☕\n记得打卡上班哦~\n今天也要开心，我会想你的~ 💓'
+            ];
+            const randomIndex = Math.floor(Math.random() * morningTexts.length);
+            document.getElementById('morningContent').value = morningTexts[randomIndex];
+            showToast('✨ 已填充上班提醒词');
+        }
+
+        // 快速填充下班提醒词
+        function fillEveningContent() {
+            const eveningTexts = [
+                '宝贝，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💕',
+                '亲爱的，该下班打卡啦~ 🌟\n辛苦一天了，放松一下吧~\n爱你哦~ 💖',
+                '老婆，记得下班打卡哦~ 🏠\n工作辛苦了，马上就能休息啦！\n我在家里想你~ 💗',
+                '下班时间到~ 🎉\n记得打卡，然后就可以放松啦！\n今天也要好好休息哦~ 💓'
+            ];
+            const randomIndex = Math.floor(Math.random() * eveningTexts.length);
+            document.getElementById('eveningContent').value = eveningTexts[randomIndex];
+            showToast('✨ 已填充下班提醒词');
+        }
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
