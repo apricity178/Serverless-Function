@@ -29,169 +29,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>打卡提醒 - PushPlus 微信推送</title>
-    <script>
-// 河南省所有市、县、区数据（内联到 HTML 中确保可靠加载）
-const HENAN_CITIES = [
-  { name: '郑州市', district: '中原区' },
-  { name: '郑州市', district: '二七区' },
-  { name: '郑州市', district: '管城回族区' },
-  { name: '郑州市', district: '金水区' },
-  { name: '郑州市', district: '上街区' },
-  { name: '郑州市', district: '惠济区' },
-  { name: '郑州市', district: '巩义市' },
-  { name: '郑州市', district: '荥阳市' },
-  { name: '郑州市', district: '新密市' },
-  { name: '郑州市', district: '新郑市' },
-  { name: '郑州市', district: '登封市' },
-  { name: '郑州市', district: '中牟县' },
-  { name: '开封市', district: '龙亭区' },
-  { name: '开封市', district: '顺河回族区' },
-  { name: '开封市', district: '鼓楼区' },
-  { name: '开封市', district: '禹王台区' },
-  { name: '开封市', district: '祥符区' },
-  { name: '开封市', district: '杞县' },
-  { name: '开封市', district: '通许县' },
-  { name: '开封市', district: '尉氏县' },
-  { name: '开封市', district: '兰考县' },
-  { name: '洛阳市', district: '老城区' },
-  { name: '洛阳市', district: '西工区' },
-  { name: '洛阳市', district: '瀍河回族区' },
-  { name: '洛阳市', district: '涧西区' },
-  { name: '洛阳市', district: '吉利区' },
-  { name: '洛阳市', district: '洛龙区' },
-  { name: '洛阳市', district: '孟津县' },
-  { name: '洛阳市', district: '新安县' },
-  { name: '洛阳市', district: '栾川县' },
-  { name: '洛阳市', district: '嵩县' },
-  { name: '洛阳市', district: '汝阳县' },
-  { name: '洛阳市', district: '宜阳县' },
-  { name: '洛阳市', district: '洛宁县' },
-  { name: '洛阳市', district: '伊川县' },
-  { name: '洛阳市', district: '偃师市' },
-  { name: '平顶山市', district: '新华区' },
-  { name: '平顶山市', district: '卫东区' },
-  { name: '平顶山市', district: '石龙区' },
-  { name: '平顶山市', district: '湛河区' },
-  { name: '平顶山市', district: '宝丰县' },
-  { name: '平顶山市', district: '叶县' },
-  { name: '平顶山市', district: '鲁山县' },
-  { name: '平顶山市', district: '郏县' },
-  { name: '平顶山市', district: '舞钢市' },
-  { name: '平顶山市', district: '汝州市' },
-  { name: '安阳市', district: '文峰区' },
-  { name: '安阳市', district: '北关区' },
-  { name: '安阳市', district: '殷都区' },
-  { name: '安阳市', district: '龙安区' },
-  { name: '安阳市', district: '安阳县' },
-  { name: '安阳市', district: '汤阴县' },
-  { name: '安阳市', district: '滑县' },
-  { name: '安阳市', district: '内黄县' },
-  { name: '安阳市', district: '林州市' },
-  { name: '鹤壁市', district: '鹤山区' },
-  { name: '鹤壁市', district: '山城区' },
-  { name: '鹤壁市', district: '淇滨区' },
-  { name: '鹤壁市', district: '浚县' },
-  { name: '鹤壁市', district: '淇县' },
-  { name: '新乡市', district: '红旗区' },
-  { name: '新乡市', district: '卫滨区' },
-  { name: '新乡市', district: '凤泉区' },
-  { name: '新乡市', district: '牧野区' },
-  { name: '新乡市', district: '新乡县' },
-  { name: '新乡市', district: '获嘉县' },
-  { name: '新乡市', district: '原阳县' },
-  { name: '新乡市', district: '延津县' },
-  { name: '新乡市', district: '封丘县' },
-  { name: '新乡市', district: '长垣市' },
-  { name: '新乡市', district: '卫辉市' },
-  { name: '新乡市', district: '辉县市' },
-  { name: '焦作市', district: '解放区' },
-  { name: '焦作市', district: '中站区' },
-  { name: '焦作市', district: '马村区' },
-  { name: '焦作市', district: '山阳区' },
-  { name: '焦作市', district: '修武县' },
-  { name: '焦作市', district: '博爱县' },
-  { name: '焦作市', district: '武陟县' },
-  { name: '焦作市', district: '温县' },
-  { name: '焦作市', district: '沁阳市' },
-  { name: '焦作市', district: '孟州市' },
-  { name: '濮阳市', district: '华龙区' },
-  { name: '濮阳市', district: '清丰县' },
-  { name: '濮阳市', district: '南乐县' },
-  { name: '濮阳市', district: '范县' },
-  { name: '濮阳市', district: '台前县' },
-  { name: '濮阳市', district: '濮阳县' },
-  { name: '许昌市', district: '魏都区' },
-  { name: '许昌市', district: '建安区' },
-  { name: '许昌市', district: '鄢陵县' },
-  { name: '许昌市', district: '襄城县' },
-  { name: '许昌市', district: '禹州市' },
-  { name: '许昌市', district: '长葛市' },
-  { name: '漯河市', district: '源汇区' },
-  { name: '漯河市', district: '郾城区' },
-  { name: '漯河市', district: '召陵区' },
-  { name: '漯河市', district: '舞阳县' },
-  { name: '漯河市', district: '临颍县' },
-  { name: '三门峡市', district: '湖滨区' },
-  { name: '三门峡市', district: '陕州区' },
-  { name: '三门峡市', district: '渑池县' },
-  { name: '三门峡市', district: '卢氏县' },
-  { name: '三门峡市', district: '义马市' },
-  { name: '三门峡市', district: '灵宝市' },
-  { name: '南阳市', district: '宛城区' },
-  { name: '南阳市', district: '卧龙区' },
-  { name: '南阳市', district: '南召县' },
-  { name: '南阳市', district: '方城县' },
-  { name: '南阳市', district: '西峡县' },
-  { name: '南阳市', district: '镇平县' },
-  { name: '南阳市', district: '内乡县' },
-  { name: '南阳市', district: '淅川县' },
-  { name: '南阳市', district: '社旗县' },
-  { name: '南阳市', district: '唐河县' },
-  { name: '南阳市', district: '新野县' },
-  { name: '南阳市', district: '桐柏县' },
-  { name: '南阳市', district: '邓州市' },
-  { name: '商丘市', district: '梁园区' },
-  { name: '商丘市', district: '睢阳区' },
-  { name: '商丘市', district: '民权县' },
-  { name: '商丘市', district: '睢县' },
-  { name: '商丘市', district: '宁陵县' },
-  { name: '商丘市', district: '柘城县' },
-  { name: '商丘市', district: '虞城县' },
-  { name: '商丘市', district: '夏邑县' },
-  { name: '商丘市', district: '永城市' },
-  { name: '信阳市', district: '浉河区' },
-  { name: '信阳市', district: '平桥区' },
-  { name: '信阳市', district: '罗山县' },
-  { name: '信阳市', district: '光山县' },
-  { name: '信阳市', district: '新县' },
-  { name: '信阳市', district: '商城县' },
-  { name: '信阳市', district: '固始县' },
-  { name: '信阳市', district: '潢川县' },
-  { name: '信阳市', district: '淮滨县' },
-  { name: '信阳市', district: '息县' },
-  { name: '周口市', district: '川汇区' },
-  { name: '周口市', district: '扶沟县' },
-  { name: '周口市', district: '西华县' },
-  { name: '周口市', district: '商水县' },
-  { name: '周口市', district: '沈丘县' },
-  { name: '周口市', district: '郸城县' },
-  { name: '周口市', district: '淮阳县' },
-  { name: '周口市', district: '太康县' },
-  { name: '周口市', district: '鹿邑县' },
-  { name: '周口市', district: '项城市' },
-  { name: '驻马店市', district: '驿城区' },
-  { name: '驻马店市', district: '西平县' },
-  { name: '驻马店市', district: '上蔡县' },
-  { name: '驻马店市', district: '平舆县' },
-  { name: '驻马店市', district: '正阳县' },
-  { name: '驻马店市', district: '确山县' },
-  { name: '驻马店市', district: '泌阳县' },
-  { name: '驻马店市', district: '汝南县' },
-  { name: '驻马店市', district: '遂平县' },
-  { name: '驻马店市', district: '新蔡县' },
-  { name: '济源市', district: '济源市' }
-];
-    </script>
+    <script src="city-data.js"></script>
     <style>
         * {
             margin: 0;
@@ -749,10 +587,18 @@ const HENAN_CITIES = [
 
             <!-- 地点设置 -->
             <div class="form-group">
-                <label>📍 天气预报地点（河南省）</label>
-                <select id="citySelect" style="width: 100%; padding: 10px 12px; border: 2px solid #e1e1e1; border-radius: 10px; font-size: 14px; margin-bottom: 12px;">
-                    <option value="">请选择城市/县区</option>
-                </select>
+                <label>📍 天气预报地点（全国）</label>
+                <div class="city-selector" style="display: flex; flex-direction: column; gap: 8px;">
+                    <select id="provinceSelect" style="width: 100%; padding: 10px 12px; border: 2px solid #e1e1e1; border-radius: 10px; font-size: 14px;">
+                        <option value="">请选择省份</option>
+                    </select>
+                    <select id="citySelect" style="width: 100%; padding: 10px 12px; border: 2px solid #e1e1e1; border-radius: 10px; font-size: 14px;" disabled>
+                        <option value="">请先选择省份</option>
+                    </select>
+                    <select id="countySelect" style="width: 100%; padding: 10px 12px; border: 2px solid #e1e1e1; border-radius: 10px; font-size: 14px;" disabled>
+                        <option value="">请先选择市</option>
+                    </select>
+                </div>
                 <small>选择地点后，上下班提醒将自动附带天气预报</small>
                 <button class="btn btn-secondary btn-sm" onclick="testWeather()" style="margin-top: 10px;">🧪 测试天气获取</button>
             </div>
@@ -839,7 +685,9 @@ const HENAN_CITIES = [
             dateMode: 'everyday', // everyday, workday, custom
             customDays: [], // 0-6, 周日到周六
             title: '打卡提醒',
-            location: '', // 天气预报地点
+            location: '', // 天气预报地点（兼容旧版本，新版本使用 locationId）
+            locationId: '', // 和风天气 Location_ID
+            locationName: '', // 县区名称（用于显示）
             morningContent: '宝贝，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕',
             eveningContent: '宝贝，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💖',
             useRandomContent: false, // 是否使用随机内容
@@ -890,87 +738,188 @@ const HENAN_CITIES = [
         let lastCheckedDate = null;
 
         // 初始化河南省城市下拉框
+        // 初始化省份下拉框
         function initProvinceSelector() {
-            const select = document.getElementById('citySelect');
-            if (!select || typeof HENAN_CITIES === 'undefined') return;
+            const provinceSelect = document.getElementById('provinceSelect');
+            if (!provinceSelect || typeof CITY_DATA === 'undefined') return;
 
             // 清空现有选项（保留第一个提示选项）
-            while (select.options.length > 1) {
-                select.remove(1);
+            while (provinceSelect.options.length > 1) {
+                provinceSelect.remove(1);
             }
 
-            // 按城市名分组，创建 optgroup
-            const citiesMap = {};
-            HENAN_CITIES.forEach(item => {
-                if (!citiesMap[item.name]) {
-                    citiesMap[item.name] = [];
-                }
-                citiesMap[item.name].push(item.district);
-            });
-
-            // 填充下拉框
-            Object.keys(citiesMap).sort().forEach(cityName => {
-                const optgroup = document.createElement('optgroup');
-                optgroup.label = cityName;
-
-                citiesMap[cityName].sort().forEach(district => {
-                    const option = document.createElement('option');
-                    option.value = district;
-                    option.textContent = district;
-                    option.dataset.fullName = cityName + ' ' + district;
-                    optgroup.appendChild(option);
-                });
-
-                select.appendChild(optgroup);
+            // 填充省份
+            const provinces = getProvinces();
+            provinces.forEach(province => {
+                const option = document.createElement('option');
+                option.value = province;
+                option.textContent = province;
+                provinceSelect.appendChild(option);
             });
 
             // 绑定选择事件
-            select.onchange = onCitySelect;
+            provinceSelect.onchange = onProvinceChange;
         }
 
-        // 城市选择改变
-        function onCitySelect() {
-            const select = document.getElementById('citySelect');
-            const selectedOption = select.options[select.selectedIndex];
+        // 省份选择改变
+        function onProvinceChange() {
+            const provinceSelect = document.getElementById('provinceSelect');
+            const citySelect = document.getElementById('citySelect');
+            const countySelect = document.getElementById('countySelect');
 
-            if (!selectedOption.value) {
-                config.location = '';
+            // 清空市下拉框
+            while (citySelect.options.length > 1) {
+                citySelect.remove(1);
+            }
+
+            // 禁用县区下拉框
+            countySelect.disabled = true;
+            while (countySelect.options.length > 1) {
+                countySelect.remove(1);
+            }
+
+            const selectedProvince = provinceSelect.value;
+            if (!selectedProvince) {
+                citySelect.disabled = true;
+                config.locationId = '';
                 return;
             }
 
-            // 从父级 optgroup 的 label 获取城市名（用于天气查询）
-            const optgroup = selectedOption.parentElement;
-            const cityName = optgroup ? optgroup.label : '';
-            config.location = cityName;  // 如"郑州市"，和风天气 API 可识别
-            console.log('Selected location for weather:', config.location);
-            showToast('✅ 已选择：' + cityName + ' ' + selectedOption.value);
+            // 填充市下拉框
+            const cities = getCities(selectedProvince);
+            cities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                citySelect.appendChild(option);
+            });
+
+            // 启用市下拉框
+            citySelect.disabled = false;
+            citySelect.onchange = onCityChange;
         }
 
-        // 恢复城市选择（根据城市名选中对应 optgroup 下的第一个区县）
-        function restoreLocationSelector(location) {
-            if (!location) return;
+        // 市选择改变
+        function onCityChange() {
+            const provinceSelect = document.getElementById('provinceSelect');
+            const citySelect = document.getElementById('citySelect');
+            const countySelect = document.getElementById('countySelect');
 
-            const select = document.getElementById('citySelect');
-            if (!select) return;
-
-            // 遍历所有 optgroup，找到 label 匹配的城市
-            const optgroups = select.querySelectorAll('optgroup');
-            for (const optgroup of optgroups) {
-                if (optgroup.label === location && optgroup.options.length > 0) {
-                    // 选中该城市下第一个区县
-                    const firstOpt = optgroup.options[0];
-                    firstOpt.selected = true;
-                    // 同步 select.selectedIndex
-                    for (let i = 0; i < select.options.length; i++) {
-                        if (select.options[i] === firstOpt) {
-                            select.selectedIndex = i;
-                            break;
-                        }
-                    }
-                    config.location = location;
-                    break;
-                }
+            // 清空县区下拉框
+            while (countySelect.options.length > 1) {
+                countySelect.remove(1);
             }
+
+            const selectedProvince = provinceSelect.value;
+            const selectedCity = citySelect.value;
+            if (!selectedProvince || !selectedCity) {
+                countySelect.disabled = true;
+                config.locationId = '';
+                return;
+            }
+
+            // 填充县区下拉框
+            const counties = getCounties(selectedProvince, selectedCity);
+            counties.forEach(county => {
+                const option = document.createElement('option');
+                option.value = county.id;  // Location_ID
+                option.textContent = county.name;
+                option.dataset.lat = county.lat;
+                option.dataset.lon = county.lon;
+                countySelect.appendChild(option);
+            });
+
+            // 启用县区下拉框
+            countySelect.disabled = false;
+            countySelect.onchange = onCountySelect;
+        }
+
+        // 县区选择改变
+        function onCountySelect() {
+            const countySelect = document.getElementById('countySelect');
+            const selectedOption = countySelect.options[countySelect.selectedIndex];
+
+            if (!selectedOption.value) {
+                config.locationId = '';
+                return;
+            }
+
+            // 保存 Location_ID
+            config.locationId = selectedOption.value;
+            config.locationName = countySelect.options[countySelect.selectedIndex].textContent;
+            console.log('Selected locationId for weather:', config.locationId);
+            showToast('✅ 已选择：' + selectedOption.textContent);
+        }
+
+        // 城市选择改变
+        // 根据 locationId 恢复选择
+        function restoreLocationSelector(locationId) {
+            if (!locationId) return;
+
+            // 查找该 locationId 对应的省份、城市、区县
+            let foundProvince = null, foundCity = null, foundCountyName = null;
+            for (const province in CITY_DATA) {
+                for (const city in CITY_DATA[province]) {
+                    const county = CITY_DATA[province][city].find(c => c.id === locationId);
+                    if (county) {
+                        foundProvince = province;
+                        foundCity = city;
+                        foundCountyName = county.name;
+                        break;
+                    }
+                }
+                if (foundProvince) break;
+            }
+
+            if (!foundProvince) {
+                console.warn('Location ID not found:', locationId);
+                return;
+            }
+
+            // 设置省份下拉框
+            const provinceSelect = document.getElementById('provinceSelect');
+            provinceSelect.value = foundProvince;
+
+            // 手动触发省份切换逻辑（填充市下拉框）
+            const citySelect = document.getElementById('citySelect');
+            while (citySelect.options.length > 1) {
+                citySelect.remove(1);
+            }
+            const cities = getCities(foundProvince);
+            cities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city;
+                option.textContent = city;
+                citySelect.appendChild(option);
+            });
+            citySelect.disabled = false;
+
+            // 设置市下拉框
+            citySelect.value = foundCity;
+
+            // 手动触发市切换逻辑（填充县区下拉框）
+            const countySelect = document.getElementById('countySelect');
+            while (countySelect.options.length > 1) {
+                countySelect.remove(1);
+            }
+            const counties = getCounties(foundProvince, foundCity);
+            counties.forEach(county => {
+                const option = document.createElement('option');
+                option.value = county.id;
+                option.textContent = county.name;
+                option.dataset.lat = county.lat;
+                option.dataset.lon = county.lon;
+                countySelect.appendChild(option);
+            });
+            countySelect.disabled = false;
+
+            // 设置县区下拉框
+            countySelect.value = locationId;
+
+            // 保存到 config
+            config.locationId = locationId;
+            config.locationName = foundCountyName;
+            console.log('✅ Restored location:', foundProvince, foundCity, foundCountyName, locationId);
         }
 
         // 初始化
@@ -996,13 +945,13 @@ const HENAN_CITIES = [
                 }
                 // 恢复标题和内容
                 document.getElementById('title').value = config.title || '打卡提醒';
-                document.getElementById('location').value = config.location || '';
+                // 注意：不再恢复 document.getElementById('location')，因为已经改为三级联动
                 document.getElementById('morningContent').value = config.morningContent || '宝贝，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕';
                 document.getElementById('eveningContent').value = config.eveningContent || '宝贝，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💖';
-
-                // 恢复地点选择（省市县）
-                if (config.location) {
-                    restoreLocationSelector(config.location);
+                
+                // 恢复地点选择（根据 locationId）
+                if (config.locationId) {
+                    restoreLocationSelector(config.locationId);
                 }
 
                 // 恢复时间列表
@@ -1069,7 +1018,7 @@ const HENAN_CITIES = [
             });
 
             config.title = document.getElementById('title').value.trim() || '打卡提醒';
-            config.location = document.getElementById('location').value.trim();
+            // 注意：locationId 和 locationName 已经在 onCountySelect() 中保存到 config 了
             config.morningContent = document.getElementById('morningContent').value.trim() || '宝贝，早上好~ 记得打卡上班哦！';
             config.eveningContent = document.getElementById('eveningContent').value.trim() || '宝贝，下班时间到啦~ 记得打卡下班！';
             config.useRandomContent = document.getElementById('randomContentToggle').checked;
@@ -1265,12 +1214,12 @@ const HENAN_CITIES = [
 
         // 获取天气预报
         async function fetchWeather(type = 'today') {
-            if (!config.location) {
+            if (!config.locationId) {
                 return null;
             }
 
             try {
-                const response = await fetch(`/api/weather?location=${encodeURIComponent(config.location)}&type=${type}`);
+                const response = await fetch(`/api/weather?locationId=${config.locationId}&type=${type}`);
                 const data = await response.json();
                 
                 if (data.code === 200 && data.data) {
@@ -1285,8 +1234,8 @@ const HENAN_CITIES = [
 
         // 测试天气获取
         async function testWeather() {
-            if (!config.location) {
-                showToast('请先输入天气预报地点');
+            if (!config.locationId) {
+                showToast('请先选择天气预报地点');
                 return;
             }
 
@@ -1314,7 +1263,7 @@ const HENAN_CITIES = [
                 }
 
                 if ((!todayData || !todayData.now) && (!tomorrowData || !tomorrowData.daily)) {
-                    html = '天气获取失败，请检查地点名称';
+                    html = '天气获取失败，请检查地点';
                 }
 
                 resultDiv.innerHTML = html;
