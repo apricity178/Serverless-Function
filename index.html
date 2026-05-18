@@ -29,7 +29,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>打卡提醒 - PushPlus 微信推送</title>
-    <script src="city-data.js"></script>
+    <script src="henan-cities.js"></script>
     <style>
         * {
             margin: 0;
@@ -587,15 +587,11 @@
 
             <!-- 地点设置 -->
             <div class="form-group">
-                <label>📍 天气预报地点</label>
-                <div style="display: flex; gap: 10px; margin-bottom: 12px;">
-                    <input type="text" id="citySearch" placeholder="输入城市名称搜索（如：北京、深圳南山）" style="flex: 1; padding: 10px 12px; border: 2px solid #e1e1e1; border-radius: 10px; font-size: 14px;">
-                    <button class="btn btn-secondary btn-sm" onclick="searchCity()" style="white-space: nowrap;">🔍 搜索</button>
-                </div>
-                <select id="citySelect" style="width: 100%; padding: 10px 12px; border: 2px solid #e1e1e1; border-radius: 10px; font-size: 14px; margin-bottom: 12px; display: none;">
-                    <option value="">请选择城市</option>
+                <label>📍 天气预报地点（河南省）</label>
+                <select id="citySelect" style="width: 100%; padding: 10px 12px; border: 2px solid #e1e1e1; border-radius: 10px; font-size: 14px; margin-bottom: 12px;">
+                    <option value="">请选择城市/县区</option>
                 </select>
-                <small>搜索并选择城市后，上下班提醒将自动附带天气预报</small>
+                <small>选择地点后，上下班提醒将自动附带天气预报</small>
                 <button class="btn btn-secondary btn-sm" onclick="testWeather()" style="margin-top: 10px;">🧪 测试天气获取</button>
             </div>
 
@@ -730,6 +726,79 @@
 
         let reminderTimer = null;
         let lastCheckedDate = null;
+
+        // 初始化河南省城市下拉框
+        function initProvinceSelector() {
+            const select = document.getElementById('citySelect');
+            if (!select || typeof HENAN_CITIES === 'undefined') return;
+
+            // 清空现有选项（保留第一个提示选项）
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+
+            // 按城市名分组，创建 optgroup
+            const citiesMap = {};
+            HENAN_CITIES.forEach(item => {
+                if (!citiesMap[item.name]) {
+                    citiesMap[item.name] = [];
+                }
+                citiesMap[item.name].push(item.district);
+            });
+
+            // 填充下拉框
+            Object.keys(citiesMap).sort().forEach(cityName => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = cityName;
+
+                citiesMap[cityName].sort().forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district;
+                    option.textContent = district;
+                    option.dataset.fullName = cityName + ' ' + district;
+                    optgroup.appendChild(option);
+                });
+
+                select.appendChild(optgroup);
+            });
+
+            // 绑定选择事件
+            select.onchange = onCitySelect;
+        }
+
+        // 城市选择改变
+        function onCitySelect() {
+            const select = document.getElementById('citySelect');
+            const selectedOption = select.options[select.selectedIndex];
+
+            if (!selectedOption.value) {
+                config.location = '';
+                return;
+            }
+
+            // 保存完整的城市名（用于天气查询）
+            config.location = selectedOption.dataset.fullName || selectedOption.textContent;
+            console.log('Selected location:', config.location);
+            showToast('✅ 已选择：' + config.location);
+        }
+
+        // 恢复城市选择
+        function restoreLocationSelector(location) {
+            if (!location) return;
+
+            const select = document.getElementById('citySelect');
+            if (!select) return;
+
+            // 遍历所有选项，找到匹配的城市
+            for (let i = 0; i < select.options.length; i++) {
+                const option = select.options[i];
+                if (option.dataset.fullName === location || option.textContent === location) {
+                    select.selectedIndex = i;
+                    config.location = location;
+                    break;
+                }
+            }
+        }
 
         // 初始化
         function init() {
