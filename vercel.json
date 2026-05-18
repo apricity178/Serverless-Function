@@ -2,10 +2,12 @@
   "version": 2,
   "builds": [
     { "src": "index.html", "use": "@vercel/static" },
-    { "src": "api/proxy.js", "use": "@vercel/node" }
+    { "src": "api/proxy.js", "use": "@vercel/node" },
+    { "src": "api/weather.js", "use": "@vercel/node" }
   ],
   "routes": [
     { "src": "/api/proxy", "dest": "/api/proxy.js" },
+    { "src": "/api/weather", "dest": "/api/weather.js" },
     { "src": "/(.*)", "dest": "/$1" }
   ]
 }

@@ -938,24 +938,35 @@ const HENAN_CITIES = [
                 return;
             }
 
-            // 保存完整的城市名（用于天气查询）
-            config.location = selectedOption.dataset.fullName || selectedOption.textContent;
-            console.log('Selected location:', config.location);
-            showToast('✅ 已选择：' + config.location);
+            // 从父级 optgroup 的 label 获取城市名（用于天气查询）
+            const optgroup = selectedOption.parentElement;
+            const cityName = optgroup ? optgroup.label : '';
+            config.location = cityName;  // 如"郑州市"，和风天气 API 可识别
+            console.log('Selected location for weather:', config.location);
+            showToast('✅ 已选择：' + cityName + ' ' + selectedOption.value);
         }
 
-        // 恢复城市选择
+        // 恢复城市选择（根据城市名选中对应 optgroup 下的第一个区县）
         function restoreLocationSelector(location) {
             if (!location) return;
 
             const select = document.getElementById('citySelect');
             if (!select) return;
 
-            // 遍历所有选项，找到匹配的城市
-            for (let i = 0; i < select.options.length; i++) {
-                const option = select.options[i];
-                if (option.dataset.fullName === location || option.textContent === location) {
-                    select.selectedIndex = i;
+            // 遍历所有 optgroup，找到 label 匹配的城市
+            const optgroups = select.querySelectorAll('optgroup');
+            for (const optgroup of optgroups) {
+                if (optgroup.label === location && optgroup.options.length > 0) {
+                    // 选中该城市下第一个区县
+                    const firstOpt = optgroup.options[0];
+                    firstOpt.selected = true;
+                    // 同步 select.selectedIndex
+                    for (let i = 0; i < select.options.length; i++) {
+                        if (select.options[i] === firstOpt) {
+                            select.selectedIndex = i;
+                            break;
+                        }
+                    }
                     config.location = location;
                     break;
                 }
@@ -1136,41 +1147,6 @@ const HENAN_CITIES = [
             } else {
                 label.textContent = '关闭（使用上方自定义内容）';
                 label.classList.remove('active');
-            }
-        }
-
-        // 恢复地点选择器
-        function restoreLocationSelector(location) {
-            if (!location) return;
-
-            // 遍历所有省份，查找匹配的城市/区县
-            for (const [province, cities] of Object.entries(CITY_DATA)) {
-                for (const [city, counties] of Object.entries(cities)) {
-                    if (counties.includes(location)) {
-                        // 找到区县
-                        document.getElementById('province').value = province;
-                        onProvinceChange();
-                        setTimeout(() => {
-                            document.getElementById('city').value = city;
-                            onCityChange();
-                            setTimeout(() => {
-                                document.getElementById('county').value = location;
-                                onCountyChange();
-                            }, 100);
-                        }, 100);
-                        return;
-                    }
-                    if (city === location) {
-                        // 找到城市
-                        document.getElementById('province').value = province;
-                        onProvinceChange();
-                        setTimeout(() => {
-                            document.getElementById('city').value = city;
-                            onCityChange();
-                        }, 100);
-                        return;
-                    }
-                }
             }
         }
 
