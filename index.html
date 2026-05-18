@@ -1015,10 +1015,10 @@
 
                 // 检查今天是否已提醒
                 if (!localStorage.getItem(reminderKey)) {
-                    // 根据时间自动判断是上班还是下班提醒
-                    const content = getContentByTime(currentHour);
-                    // 传递 currentHour 用于决定 HTML 页面风格
-                    sendPushNotification(content, currentHour);
+                    // 获取内容和时间类型
+                    const contentInfo = getContentByTime(currentHour);
+                    // 发送通知（会智能结合天气）
+                    sendPushNotification(contentInfo, currentHour);
                     localStorage.setItem(reminderKey, 'true');
                     config.lastReminder = now.toISOString();
                     document.getElementById('lastReminder').textContent =
@@ -1030,21 +1030,30 @@
 
         // 根据时间自动判断使用上班还是下班提醒内容
         function getContentByTime(hour) {
-            // 如果开启随机内容，从内置消息中随机选择（每天固定一条）
+            // 根据时间自动判断是上班还是下班提醒
+            const isMorning = hour < 12;
+            const timeType = isMorning ? 'morning' : 'evening';
+            
+            // 获取基础提醒内容
+            let baseContent = '';
             if (config.useRandomContent) {
-                if (hour < 12) {
-                    return getTodaysRandomMessage(MORNING_MESSAGES);
+                // 使用随机内容
+                if (isMorning) {
+                    baseContent = getTodaysRandomMessage(MORNING_MESSAGES);
                 } else {
-                    return getTodaysRandomMessage(EVENING_MESSAGES);
+                    baseContent = getTodaysRandomMessage(EVENING_MESSAGES);
                 }
+            } else {
+                // 使用用户自定义内容
+                baseContent = isMorning ? config.morningContent : config.eveningContent;
             }
             
-            // 否则使用用户自定义内容
-            if (hour < 12) {
-                return config.morningContent;
-            } else {
-                return config.eveningContent;
-            }
+            // 返回基础内容，天气信息将在 sendPushNotification 中智能融合
+            return {
+                content: baseContent,
+                isMorning: isMorning,
+                timeType: timeType
+            };
         }
 
         // 获取天气预报
@@ -1065,80 +1074,6 @@
                 console.error('Weather fetch error:', error);
                 return null;
             }
-        }
-
-        // 格式化天气信息
-        function formatWeatherInfo(weatherData, type = 'today') {
-            if (!weatherData) return '';
-
-            let info = '';
-            
-            if (type === 'today' && weatherData.now) {
-                // 当天天气实况
-                const now = weatherData.now;
-                info = `🌤️ 今日天气：\n`;
-                info += `天气：${now.text}\n`;
-                info += `温度：${now.temp}°C（体感 ${now.feelsLike}°C）\n`;
-                info += `风力：${now.windDir} ${now.windScale}级`;
-            } else if (type === 'tomorrow' && weatherData.daily) {
-                // 明天天气预报
-                const tomorrow = weatherData.daily[0];
-                info = `🌤️ 明日天气：\n`;
-                info += `天气：${tomorrow.textDay}\n`;
-                info += `温度：${tomorrow.tempMin}°C ~ ${tomorrow.tempMax}°C\n`;
-                info += `风力：${tomorrow.windDirDay} ${tomorrow.windScaleDay}级`;
-            }
-
-            return info;
-        }
-
-        // 根据天气生成提醒建议
-        function getWeatherSuggestions(weatherData, type = 'today') {
-            if (!weatherData) return '';
-
-            let suggestions = '\n\n💡 贴心提醒：\n';
-            
-            let temp, weather, windScale;
-            
-            if (type === 'today' && weatherData.now) {
-                temp = parseInt(weatherData.now.temp);
-                weather = weatherData.now.text;
-                windScale = parseInt(weatherData.now.windScale);
-            } else if (type === 'tomorrow' && weatherData.daily) {
-                const tomorrow = weatherData.daily[0];
-                temp = parseInt(tomorrow.tempMin);
-                weather = tomorrow.textDay;
-                windScale = parseInt(tomorrow.windScaleDay);
-            } else {
-                return '';
-            }
-
-            // 温度建议
-            if (temp < 10) {
-                suggestions += '   🧥 天气寒冷，记得穿厚外套哦~\n';
-            } else if (temp < 20) {
-                suggestions += '   🧥 天气微凉，建议带件外套~\n';
-            } else if (temp > 30) {
-                suggestions += '   🌞 天气炎热，注意防晒补水~\n';
-            }
-
-            // 天气状况建议
-            if (weather.includes('雨')) {
-                suggestions += '   ☔ 今天有雨，记得带伞哦~\n';
-            }
-            if (weather.includes('雪')) {
-                suggestions += '   ❄️ 今天有雪，注意保暖防滑~\n';
-            }
-            if (weather.includes('雾') || weather.includes('霾')) {
-                suggestions += '   😷 雾霾天气，建议戴口罩~\n';
-            }
-
-            // 风力建议
-            if (windScale >= 6) {
-                suggestions += '   💨 风力较大，注意防风~\n';
-            }
-
-            return suggestions;
         }
 
         // 测试天气获取
@@ -1186,25 +1121,125 @@
             return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
         }
 
-        // 发送推送通知（发送给所有 Token）
-        async function sendPushNotification(content, hour) {
-            // 尝试获取天气预报
-            let weatherInfo = '';
-            let weatherSuggestions = '';
+        // 智能生成结合天气的贴心提醒内容
+        function generateSmartContent(baseContent, weatherData, type = 'today') {
+            if (!weatherData) return baseContent;
             
-            if (config.location) {
-                const weatherType = hour < 12 ? 'today' : 'tomorrow';
-                const weatherData = await fetchWeather(weatherType);
+            let weatherInfo = '';
+            let temp, weather, feelsLike, windScale, windDir;
+            
+            if (type === 'today' && weatherData.now) {
+                // 当天天气实况
+                const now = weatherData.now;
+                temp = parseInt(now.temp);
+                feelsLike = parseInt(now.feelsLike);
+                weather = now.text;
+                windScale = parseInt(now.windScale);
+                windDir = now.windDir;
                 
-                if (weatherData) {
-                    weatherInfo = formatWeatherInfo(weatherData, weatherType);
-                    weatherSuggestions = getWeatherSuggestions(weatherData, weatherType);
+                weatherInfo = `📍 当前天气：\n`;
+                weatherInfo += `🌡️ 温度：${temp}°C（体感 ${feelsLike}°C）\n`;
+                weatherInfo += `🌤️ 天气：${weather}\n`;
+                weatherInfo += `💨 风力：${windDir} ${windScale}级`;
+            } else if (type === 'tomorrow' && weatherData.daily) {
+                // 明天天气预报
+                const tomorrow = weatherData.daily[0];
+                temp = parseInt(tomorrow.tempMin);
+                weather = tomorrow.textDay;
+                windScale = parseInt(tomorrow.windScaleDay);
+                windDir = tomorrow.windDirDay;
+                
+                weatherInfo = `📍 明日预报：\n`;
+                weatherInfo += `🌡️ 温度：${tomorrow.tempMin}°C ~ ${tomorrow.tempMax}°C\n`;
+                weatherInfo += `🌤️ 天气：${weather}\n`;
+                weatherInfo += `💨 风力：${windDir} ${windScale}级`;
+            } else {
+                return baseContent;
+            }
+            
+            // 生成贴心建议
+            let suggestions = '\n\n💡 贴心提醒：\n';
+            
+            // 温度建议
+            if (temp < 5) {
+                suggestions += '   🧥 天气寒冷（' + temp + '°C），记得穿厚外套和保暖衣物哦~\n';
+            } else if (temp < 15) {
+                suggestions += '   🧥 天气微凉（' + temp + '°C），建议带件外套~\n';
+            } else if (temp > 32) {
+                suggestions += '   🌞 天气炎热（' + temp + '°C），注意防晒补水，避免中暑~\n';
+            } else if (temp > 28) {
+                suggestions += '   ☀️ 天气较热（' + temp + '°C），注意防暑降温~\n';
+            }
+            
+            // 体感温度建议（如果有）
+            if (feelsLike && Math.abs(feelsLike - temp) > 3) {
+                if (feelsLike < temp) {
+                    suggestions += '   ❄️ 体感温度比实际温度低 ' + (temp - feelsLike) + '°C，注意保暖~\n';
+                } else {
+                    suggestions += '   🔥 体感温度比实际温度高 ' + (feelsLike - temp) + '°C，注意防暑~\n';
                 }
             }
             
-            // 生成 HTML 网页内容（包含天气信息）
-            const fullContent = content + (weatherInfo ? '\n\n' + weatherInfo : '') + (weatherSuggestions || '');
-            const htmlContent = generateRomanticHTML(fullContent, hour);
+            // 天气状况建议
+            if (weather.includes('雨')) {
+                if (weather.includes('大') || weather.includes('暴')) {
+                    suggestions += '   ☔ 今天有' + weather + '，记得带伞，注意安全~\n';
+                } else {
+                    suggestions += '   ☔ 今天有' + weather + '，记得带伞哦~\n';
+                }
+            }
+            if (weather.includes('雪')) {
+                if (weather.includes('大') || weather.includes('暴')) {
+                    suggestions += '   ❄️ 今天有' + weather + '，注意保暖防滑，小心路滑~\n';
+                } else {
+                    suggestions += '   ❄️ 今天有' + weather + '，注意保暖防滑~\n';
+                }
+            }
+            if (weather.includes('雾') || weather.includes('霾')) {
+                suggestions += '   😷 今天有' + weather + '，建议戴口罩，减少户外活动~\n';
+            }
+            if (weather.includes('晴') && temp > 20) {
+                suggestions += '   😎 今天阳光明媚，适合户外活动，但注意防晒~\n';
+            }
+            if (weather.includes('阴') || weather.includes('多云')) {
+                suggestions += '   🌥️ 今天' + weather + '，气温适宜，适合外出~\n';
+            }
+            
+            // 风力建议
+            if (windScale >= 7) {
+                suggestions += '   💨 风力较大（' + windScale + '级），注意防风，远离广告牌~\n';
+            } else if (windScale >= 5) {
+                suggestions += '   💨 风力较大（' + windScale + '级），注意防风保暖~\n';
+            }
+            
+            // 组合最终内容
+            const finalContent = baseContent + '\n\n' + weatherInfo + suggestions;
+            
+            return finalContent;
+        }
+
+        // 发送推送通知（发送给所有 Token）
+        async function sendPushNotification(contentInfo, hour) {
+            // 解析 contentInfo
+            const baseContent = typeof contentInfo === 'object' ? contentInfo.content : contentInfo;
+            const isMorning = typeof contentInfo === 'object' ? contentInfo.isMorning : (hour < 12);
+            const timeType = isMorning ? 'today' : 'tomorrow';
+            
+            // 尝试获取天气预报
+            let weatherData = null;
+            let finalContent = baseContent;
+            
+            if (config.location) {
+                weatherData = await fetchWeather(timeType);
+                
+                if (weatherData) {
+                    // 智能生成结合天气的贴心提醒
+                    finalContent = generateSmartContent(baseContent, weatherData, timeType);
+                }
+            }
+            
+            // 生成 HTML 网页内容
+            const htmlContent = generateRomanticHTML(finalContent, hour);
 
             // Vercel 代理地址（相对路径，自动适配域名）
             const PROXY_URL = '/api/proxy';
@@ -1332,21 +1367,31 @@
             // 根据当前时间决定测试哪个内容
             const now = new Date();
             const currentHour = now.getHours();
-            const testContent = getContentByTime(currentHour);
+            const contentInfo = getContentByTime(currentHour);
             const timeType = currentHour < 12 ? '上班' : '下班';
-
-            // 生成 HTML 内容
-            const htmlContent = generateRomanticHTML(testContent, currentHour);
-
-            // Vercel 代理地址（相对路径）
-            const PROXY_URL = '/api/proxy';
 
             document.getElementById('testModal').classList.add('show');
             document.getElementById('testResult').innerHTML = `正在测试推送【${timeType}提醒(HTML)】到 ${tokens.length} 个 Token...`;
-
+            
             let successCount = 0;
             let failCount = 0;
             const results = [];
+            
+            // 获取天气数据并生成智能提醒内容
+            let finalContent = contentInfo.content;
+            if (config.location) {
+                const weatherType = contentInfo.isMorning ? 'today' : 'tomorrow';
+                const weatherData = await fetchWeather(weatherType);
+                if (weatherData) {
+                    finalContent = generateSmartContent(contentInfo.content, weatherData, weatherType);
+                }
+            }
+            
+            // 生成 HTML 内容
+            const htmlContent = generateRomanticHTML(finalContent, currentHour);
+
+            // Vercel 代理地址（相对路径）
+            const PROXY_URL = '/api/proxy';
 
             for (const token of tokens) {
                 // 通过 Vercel 代理调用
