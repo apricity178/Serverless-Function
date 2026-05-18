@@ -22,8 +22,12 @@ export default function handler(req, res) {
     return res.status(400).json({ code: 400, msg: '缺少 location 参数' });
   }
 
-  // 和风天气 API Key（从环境变量读取）
-  const API_KEY = process.env.QWEATHER_API_KEY || '822391a0ebe540ef916c96afd0c21862';
+  // 和风天气 API Key（从环境变量读取，必须在 Vercel 中配置）
+  const API_KEY = process.env.QWEATHER_API_KEY;
+
+  if (!API_KEY) {
+    return res.status(500).json({ code: 500, msg: '天气 API Key 未配置，请在 Vercel 中设置 QWEATHER_API_KEY 环境变量' });
+  }
 
   // 第一步：查询城市 ID
   const cityLookupUrl = `https://geoapi.qweather.com/v2/city/lookup?location=${encodeURIComponent(location)}&key=${API_KEY}&lang=zh`;
