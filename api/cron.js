@@ -55,16 +55,28 @@ function buildWeatherText(baseContent, weatherData, type) {
   let suggestions = '\n\n💡 贴心提醒：\n';
   const dayLabel = type === 'tomorrow' ? '明天' : '今天';
 
-  if (temp < 5) {
-    suggestions += `   🧥 天气寒冷（${temp}°C），记得穿厚外套和保暖衣物哦~\n`;
-  } else if (temp < 15) {
-    suggestions += `   🧥 天气微凉（${temp}°C），建议带件外套~\n`;
-  } else if (temp > 32) {
-    suggestions += `   🌞 天气炎热（${temp}°C），注意防晒补水，避免中暑~\n`;
-  } else if (temp > 28) {
-    suggestions += `   ☀️ 天气较热（${temp}°C），注意防暑降温~\n`;
+  // ---- 穿衣指数（覆盖所有温度段）----
+  if (temp <= 0) {
+    suggestions += `   🧥 ${dayLabel}极寒（${temp}°C），羽绒服+保暖内衣+围巾手套，全副武装！\n`;
+  } else if (temp <= 5) {
+    suggestions += `   🧥 ${dayLabel}寒冷（${temp}°C），厚羽绒服/棉服，注意头部和脚部保暖~\n`;
+  } else if (temp <= 10) {
+    suggestions += `   🧥 ${dayLabel}较凉（${temp}°C），大衣/厚毛衣，怕冷加件保暖内衣~\n`;
+  } else if (temp <= 15) {
+    suggestions += `   🧥 ${dayLabel}微凉（${temp}°C），薄外套/针织衫，早晚温差大记得添衣~\n`;
+  } else if (temp <= 20) {
+    suggestions += `   👕 ${dayLabel}舒适（${temp}°C），长袖T恤/薄衬衫，早晚可加件薄外套~\n`;
+  } else if (temp <= 25) {
+    suggestions += `   👕 ${dayLabel}温暖（${temp}°C），单衣/长袖即可，午间活动轻便着装~\n`;
+  } else if (temp <= 30) {
+    suggestions += `   ☀️ ${dayLabel}偏热（${temp}°C），短袖/薄T恤，注意及时补充水分~\n`;
+  } else if (temp <= 35) {
+    suggestions += `   🔥 ${dayLabel}炎热（${temp}°C），穿轻便透气的衣物，多喝水防中暑~\n`;
+  } else {
+    suggestions += `   🚨 ${dayLabel}高温（${temp}°C+），尽量避免户外活动，空调房注意防护~\n`;
   }
 
+  // ---- 体感温差提醒 ----
   if (feelsLike !== null && feelsLike !== undefined && Math.abs(feelsLike - temp) > 3) {
     if (feelsLike < temp) {
       suggestions += `   ❄️ 体感温度比实际低 ${temp - feelsLike}°C，注意保暖~\n`;
@@ -73,6 +85,7 @@ function buildWeatherText(baseContent, weatherData, type) {
     }
   }
 
+  // ---- 天气状况提醒 ----
   if (weather.includes('雨')) {
     suggestions += weather.includes('大') || weather.includes('暴')
       ? `   ☔ ${dayLabel}有${weather}，记得带伞，注意安全~\n`
@@ -86,14 +99,26 @@ function buildWeatherText(baseContent, weatherData, type) {
   if (weather.includes('雾') || weather.includes('霾')) {
     suggestions += `   😷 ${dayLabel}有${weather}，建议戴口罩，减少户外活动~\n`;
   }
-  if (weather.includes('晴') && temp > 20) {
-    suggestions += `   😎 ${dayLabel}阳光明媚，适合户外活动，但注意防晒~\n`;
+  if (weather.includes('晴') || weather.includes('多云')) {
+    // 根据紫外线指数判断防晒（明日预报有 daily[0].uvIndex，now预报没有则按温度判断）
+    const uvIndexVal = weatherData.daily && weatherData.daily[0] ? weatherData.daily[0].uvIndex : null;
+    if (uvIndexVal) {
+      const uv = parseInt(uvIndexVal);
+      if (uv >= 3) {
+        const uvDesc = { '1': '极弱', '2': '弱', '3': '中等', '4': '强', '5': '很强', '6': '极强' };
+        suggestions += `   ☀️ ${dayLabel}紫外线${uvDesc[uvIndexVal] || '较强'}（指数${uv}），记得涂防晒霜~\n`;
+      }
+    } else if (weather.includes('晴') && temp > 20) {
+      suggestions += `   😎 ${dayLabel}阳光明媚，适合户外活动，但注意防晒~\n`;
+    }
   }
-  if (weather.includes('阴') || weather.includes('多云')) {
-    suggestions += `   🌥️ ${dayLabel}${weather}，气温适宜，适合外出~\n`;
+  if (weather.includes('阴')) {
+    suggestions += `   🌥️ ${dayLabel}阴天，气温适宜，适合外出活动~\n`;
   }
+
+  // ---- 风力提醒 ----
   if (windScale >= 7) {
-    suggestions += `   💨 风力较大（${windScale}级），注意防风，远离广告牌~\n`;
+    suggestions += `   💨 风力较大（${windScale}级），注意防风，远离广告牌/临时搭建物~\n`;
   } else if (windScale >= 5) {
     suggestions += `   💨 风力较大（${windScale}级），注意防风保暖~\n`;
   }
