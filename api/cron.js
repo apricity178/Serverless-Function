@@ -75,19 +75,19 @@ function getSpecialDatesText(now) {
   let myBdayThisYear = new Date(year, myMonth - 1, myDay);
   if (now > myBdayThisYear) myBdayThisYear = new Date(year + 1, myMonth - 1, myDay);
   const daysToMyBday = Math.ceil((myBdayThisYear - now) / 86400000);
-  const myBdayLabel = daysToMyBday === 0 ? '🎂 今天是宝的生日！生日快乐呀！🎉'
-    : daysToMyBday === 1 ? '🎂 明天是宝的生日哦，准备好了吗！'
-    : `🎂 宝的生日还有 ${daysToMyBday} 天~`;
+  const myBdayLabel = daysToMyBday === 0 ? '🎂 今天是你的生日！生日快乐呀！🎉'
+    : daysToMyBday === 1 ? '🎂 明天是你的生日哦，准备好了吗！'
+    : `🎂 老公的生日还有 ${daysToMyBday} 天~`;
   lines.push(myBdayLabel);
 
-  // 她的生日倒计时
+  // 老婆的生日倒计时
   const [herMonth, herDay] = SPECIAL_DATES.herBirthday.split('-').map(Number);
   let herBdayThisYear = new Date(year, herMonth - 1, herDay);
   if (now > herBdayThisYear) herBdayThisYear = new Date(year + 1, herMonth - 1, herDay);
   const daysToHerBday = Math.ceil((herBdayThisYear - now) / 86400000);
-  const herBdayLabel = daysToHerBday === 0 ? '🎀 今天是她生日！记得送上祝福呀~ 💐'
-    : daysToHerBday === 1 ? '🎀 明天是她生日哦，准备好惊喜了吗！'
-    : `🎀 她的生日还有 ${daysToHerBday} 天~`;
+  const herBdayLabel = daysToHerBday === 0 ? '🎀 今天是老婆生日！记得送上祝福呀~ 💐'
+    : daysToHerBday === 1 ? '🎀 明天是老婆生日哦，准备好惊喜了吗！'
+    : `🎀 老婆的生日还有 ${daysToHerBday} 天~`;
   lines.push(herBdayLabel);
 
   return lines.join(' | ');
@@ -138,25 +138,25 @@ function buildWeatherText(baseContent, weatherData, type) {
   let suggestions = '\n\n💡 贴心提醒：\n';
   const dayLabel = type === 'tomorrow' ? '明天' : '今天';
 
-  // ---- 穿衣指数（覆盖所有温度段）----
+  // ---- 穿衣指南（覆盖所有温度段，更自然口语化）----
   if (temp <= 0) {
-    suggestions += `   🧥 ${dayLabel}极寒（${temp}°C），羽绒服+保暖内衣+围巾手套，全副武装！\n`;
+    suggestions += `   🧥 ${dayLabel}极寒（${temp}°C），全副武装出门吧！羽绒服+保暖内衣+围巾手套~\n`;
   } else if (temp <= 5) {
-    suggestions += `   🧥 ${dayLabel}寒冷（${temp}°C），厚羽绒服/棉服，注意头部和脚部保暖~\n`;
+    suggestions += `   🧥 ${dayLabel}很冷（${temp}°C），厚羽绒服/棉服安排上，注意头部和脚部保暖~\n`;
   } else if (temp <= 10) {
-    suggestions += `   🧥 ${dayLabel}较凉（${temp}°C），大衣/厚毛衣，怕冷加件保暖内衣~\n`;
+    suggestions += `   🧥 ${dayLabel}较凉（${temp}°C），建议穿大衣或厚毛衣，怕冷加件保暖内衣~\n`;
   } else if (temp <= 15) {
-    suggestions += `   🧥 ${dayLabel}微凉（${temp}°C），薄外套/针织衫，早晚温差大记得添衣~\n`;
+    suggestions += `   🧥 ${dayLabel}微凉（${temp}°C），薄外套或针织衫刚好，早晚记得添衣~\n`;
   } else if (temp <= 20) {
-    suggestions += `   👕 ${dayLabel}舒适（${temp}°C），长袖T恤/薄衬衫，早晚可加件薄外套~\n`;
+    suggestions += `   👕 ${dayLabel}舒适（${temp}°C），长袖T恤或薄衬衫刚好，早晚可加件薄外套~\n`;
   } else if (temp <= 25) {
-    suggestions += `   👕 ${dayLabel}温暖（${temp}°C），单衣/长袖即可，午间活动轻便着装~\n`;
+    suggestions += `   👕 ${dayLabel}温暖（${temp}°C），单衣长袖即可，午间轻便着装~\n`;
   } else if (temp <= 30) {
-    suggestions += `   ☀️ ${dayLabel}偏热（${temp}°C），短袖/薄T恤，注意及时补充水分~\n`;
+    suggestions += `   ☀️ ${dayLabel}偏热（${temp}°C），短袖安排上，记得多喝水哦~\n`;
   } else if (temp <= 35) {
-    suggestions += `   🔥 ${dayLabel}炎热（${temp}°C），穿轻便透气的衣物，多喝水防中暑~\n`;
+    suggestions += `   🔥 ${dayLabel}炎热（${temp}°C），穿透气轻便的衣服，多喝水防中暑~\n`;
   } else {
-    suggestions += `   🚨 ${dayLabel}高温（${temp}°C+），尽量避免户外活动，空调房注意防护~\n`;
+    suggestions += `   🚨 ${dayLabel}高温（${temp}°C+），尽量别在户外待太久，空调房注意防护~\n`;
   }
 
   // ---- 体感温差提醒 ----
