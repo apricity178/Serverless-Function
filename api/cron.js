@@ -53,6 +53,7 @@ function buildWeatherText(baseContent, weatherData, type) {
   }
 
   let suggestions = '\n\n💡 贴心提醒：\n';
+  const dayLabel = type === 'tomorrow' ? '明天' : '今天';
 
   if (temp < 5) {
     suggestions += `   🧥 天气寒冷（${temp}°C），记得穿厚外套和保暖衣物哦~\n`;
@@ -74,22 +75,22 @@ function buildWeatherText(baseContent, weatherData, type) {
 
   if (weather.includes('雨')) {
     suggestions += weather.includes('大') || weather.includes('暴')
-      ? `   ☔ 今天有${weather}，记得带伞，注意安全~\n`
-      : `   ☔ 今天有${weather}，记得带伞哦~\n`;
+      ? `   ☔ ${dayLabel}有${weather}，记得带伞，注意安全~\n`
+      : `   ☔ ${dayLabel}有${weather}，记得带伞哦~\n`;
   }
   if (weather.includes('雪')) {
     suggestions += weather.includes('大') || weather.includes('暴')
-      ? `   ❄️ 今天有${weather}，注意保暖防滑，小心路滑~\n`
-      : `   ❄️ 今天有${weather}，注意保暖防滑~\n`;
+      ? `   ❄️ ${dayLabel}有${weather}，注意保暖防滑，小心路滑~\n`
+      : `   ❄️ ${dayLabel}有${weather}，注意保暖防滑~\n`;
   }
   if (weather.includes('雾') || weather.includes('霾')) {
-    suggestions += `   😷 今天有${weather}，建议戴口罩，减少户外活动~\n`;
+    suggestions += `   😷 ${dayLabel}有${weather}，建议戴口罩，减少户外活动~\n`;
   }
   if (weather.includes('晴') && temp > 20) {
-    suggestions += `   😎 今天阳光明媚，适合户外活动，但注意防晒~\n`;
+    suggestions += `   😎 ${dayLabel}阳光明媚，适合户外活动，但注意防晒~\n`;
   }
   if (weather.includes('阴') || weather.includes('多云')) {
-    suggestions += `   🌥️ 今天${weather}，气温适宜，适合外出~\n`;
+    suggestions += `   🌥️ ${dayLabel}${weather}，气温适宜，适合外出~\n`;
   }
   if (windScale >= 7) {
     suggestions += `   💨 风力较大（${windScale}级），注意防风，远离广告牌~\n`;
