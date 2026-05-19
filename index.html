@@ -2003,10 +2003,21 @@
 
             // 生成 GitHub Actions YAML（基于配置中的推送时间，转换为 UTC）
             const times = config.times && config.times.length > 0 ? config.times : ['08:00', '18:00'];
+            // 根据 dateMode 决定星期部分
+            const dateMode = config.dateMode || 'everyday';
+            let daysPart = '*';
+            let daysLabel = '（每日）';
+            if (dateMode === 'workday') {
+                daysPart = '1-5';
+                daysLabel = '（工作日）';
+            } else if (dateMode === 'custom' && config.customDays && config.customDays.length > 0) {
+                daysPart = config.customDays.sort((a,b) => a-b).join('-');
+                daysLabel = `（周${config.customDays.map(d => ['日','一','二','三','四','五','六'][d]).join('、')}）`;
+            }
             const cronEntries = times.map(t => {
                 const [h, m] = t.split(':').map(Number);
                 const utcH = (h - 8 + 24) % 24;
-                return `  - cron: '${m} ${utcH} * * 1-5'  # 北京时间 ${t}（工作日）`;
+                return `  - cron: '${m} ${utcH} * * ${daysPart}'  # 北京时间 ${t}${daysLabel}`;
             }).join('\n');
 
             const yaml = `name: 打卡提醒推送
