@@ -659,9 +659,45 @@
             </div>
         </div>
 
+        <!-- 服务端定时推送面板 -->
+        <div class="card" style="margin-top: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <h3 style="margin-bottom: 10px; color: white;">🚀 托管定时推送（推荐）</h3>
+            <p style="font-size: 13px; opacity: 0.9; margin-bottom: 15px;">
+                网页关闭后推送仍可正常运行。将下方 URL 配置到 GitHub Actions，实现全自动定时推送。
+            </p>
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label style="color: rgba(255,255,255,0.85); font-size: 13px;">🌅 上班推送 URL（含天气）</label>
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <input type="text" id="cronMorningUrl" readonly
+                        style="flex:1; font-size:11px; padding:8px; border-radius:8px; border:none; background:rgba(255,255,255,0.15); color:white; cursor:pointer;"
+                        placeholder="请先保存配置" onclick="this.select()">
+                    <button class="btn btn-sm" onclick="copyCronUrl('morning')"
+                        style="background:rgba(255,255,255,0.25); color:white; border:none; white-space:nowrap;">复制</button>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="color: rgba(255,255,255,0.85); font-size: 13px;">🌙 下班推送 URL（含天气）</label>
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <input type="text" id="cronEveningUrl" readonly
+                        style="flex:1; font-size:11px; padding:8px; border-radius:8px; border:none; background:rgba(255,255,255,0.15); color:white; cursor:pointer;"
+                        placeholder="请先保存配置" onclick="this.select()">
+                    <button class="btn btn-sm" onclick="copyCronUrl('evening')"
+                        style="background:rgba(255,255,255,0.25); color:white; border:none; white-space:nowrap;">复制</button>
+                </div>
+            </div>
+            <details style="font-size: 12px; opacity: 0.9;">
+                <summary style="cursor:pointer; margin-bottom:8px;">📋 GitHub Actions 配置方法（点击展开）</summary>
+                <div style="background:rgba(0,0,0,0.2); border-radius:8px; padding:12px; text-align:left;">
+                    <p style="margin:0 0 8px 0;">在你的 GitHub 仓库创建 <code>.github/workflows/punch-reminder.yml</code>：</p>
+                    <pre id="actionsYaml" style="font-size:11px; white-space:pre-wrap; word-break:break-all; margin:0; background:rgba(0,0,0,0.3); padding:10px; border-radius:6px;">正在生成...</pre>
+                    <button class="btn btn-sm" onclick="copyActionsYaml()"
+                        style="margin-top:8px; background:rgba(255,255,255,0.25); color:white; border:none;">复制 YAML</button>
+                </div>
+            </details>
+        </div>
+
         <div class="footer">
-            <p>⚠️ 注意：浏览器关闭后定时器将停止，建议部署到服务器</p>
-            <p><a href="https://github.com" target="_blank">部署到 GitHub Pages</a></p>
+            <p>配置完成后，关闭网页推送依然正常运行 ✅</p>
         </div>
     </div>
 
@@ -928,6 +964,7 @@
             loadConfig();
             setupEventListeners();
             startReminder();
+            refreshCronUrls(); // 刷新托管推送 URL
         }
 
         // 加载配置
@@ -1058,6 +1095,8 @@
             localStorage.setItem('punchReminderConfig', JSON.stringify(config));
             showToast('✅ 配置已保存');
             startReminder();
+            // 刷新托管推送 URL
+            refreshCronUrls();
         }
 
         // 设置事件监听
@@ -1412,7 +1451,7 @@
             let weatherData = null;
             let finalContent = baseContent;
             
-            if (config.location) {
+            if (config.locationId) {
                 weatherData = await fetchWeather(timeType);
                 
                 if (weatherData) {
@@ -1562,7 +1601,7 @@
             
             // 获取天气数据并生成智能提醒内容
             let finalContent = contentInfo.content;
-            if (config.location) {
+            if (config.locationId) {
                 const weatherType = contentInfo.isMorning ? 'today' : 'tomorrow';
                 const weatherData = await fetchWeather(weatherType);
                 if (weatherData) {
@@ -1608,6 +1647,107 @@
         // 关闭模态框
         function closeModal() {
             document.getElementById('testModal').classList.remove('show');
+        }
+
+        // ======== 生成托管推送 URL（GitHub Actions 用）========
+
+        function buildCronUrl(type) {
+            // 获取当前 Vercel 域名
+            const baseUrl = window.location.origin;
+            const tokens = config.tokens.join(',');
+            if (!tokens) return '';
+
+            const params = new URLSearchParams({
+                tokens: tokens,
+                title: config.title || '打卡提醒',
+                forceType: type,
+            });
+            if (config.locationId) params.set('locationId', config.locationId);
+            if (type === 'morning' && config.morningContent) {
+                params.set('morningContent', encodeURIComponent(config.morningContent));
+            }
+            if (type === 'evening' && config.eveningContent) {
+                params.set('eveningContent', encodeURIComponent(config.eveningContent));
+            }
+            return `${baseUrl}/api/cron?${params.toString()}`;
+        }
+
+        function refreshCronUrls() {
+            const morningUrl = buildCronUrl('morning');
+            const eveningUrl = buildCronUrl('evening');
+            const morningInput = document.getElementById('cronMorningUrl');
+            const eveningInput = document.getElementById('cronEveningUrl');
+            if (morningInput) morningInput.value = morningUrl || '请先保存配置（至少填写一个 Token）';
+            if (eveningInput) eveningInput.value = eveningUrl || '请先保存配置（至少填写一个 Token）';
+
+            // 生成 GitHub Actions YAML（基于配置中的推送时间，转换为 UTC）
+            const times = config.times && config.times.length > 0 ? config.times : ['08:00', '18:00'];
+            const cronEntries = times.map(t => {
+                const [h, m] = t.split(':').map(Number);
+                const utcH = (h - 8 + 24) % 24;
+                return `  - cron: '${m} ${utcH} * * 1-5'  # 北京时间 ${t}（工作日）`;
+            }).join('\n');
+
+            const yaml = `name: 打卡提醒推送
+
+on:
+  schedule:
+${cronEntries}
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  push-reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 上班提醒
+        if: \${{ contains(fromJSON('["8","9","10","11"]'), format('{0}', github.event.schedule && fromJSON('{}') || 0)) }}
+        run: |
+          curl -sf "${morningUrl || 'https://your-vercel-url/api/cron?tokens=YOUR_TOKEN&forceType=morning'}"
+
+      - name: 下班提醒
+        run: |
+          # 根据北京时间判断上班/下班（直接用 forceType 或不传让服务端自动判断）
+          HOUR=\$(TZ=Asia/Shanghai date +%H)
+          if [ "\$HOUR" -lt 12 ]; then
+            curl -sf "${morningUrl || 'https://your-vercel-url/api/cron?tokens=YOUR_TOKEN&forceType=morning'}"
+          else
+            curl -sf "${eveningUrl || 'https://your-vercel-url/api/cron?tokens=YOUR_TOKEN&forceType=evening'}"
+          fi`;
+
+            const yamlEl = document.getElementById('actionsYaml');
+            if (yamlEl) yamlEl.textContent = yaml;
+        }
+
+        function copyCronUrl(type) {
+            const id = type === 'morning' ? 'cronMorningUrl' : 'cronEveningUrl';
+            const input = document.getElementById(id);
+            if (!input || !input.value || input.value.includes('请先')) {
+                showToast('请先保存配置');
+                return;
+            }
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                showToast('✅ URL 已复制');
+            }).catch(() => {
+                document.execCommand('copy');
+                showToast('✅ URL 已复制');
+            });
+        }
+
+        function copyActionsYaml() {
+            const yamlEl = document.getElementById('actionsYaml');
+            if (!yamlEl) return;
+            navigator.clipboard.writeText(yamlEl.textContent).then(() => {
+                showToast('✅ YAML 已复制');
+            }).catch(() => {
+                const sel = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(yamlEl);
+                sel.removeAllRanges();
+                sel.addRange(range);
+                document.execCommand('copy');
+                showToast('✅ YAML 已复制');
+            });
         }
 
         // 快速填充上班提醒词
