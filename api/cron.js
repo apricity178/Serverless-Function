@@ -2,6 +2,22 @@
 // 由 Vercel Cron Jobs 或 GitHub Actions 定时触发
 // 调用方式：GET /api/cron?tokens=xxx&locationId=xxx&title=xxx&morningContent=xxx&eveningContent=xxx
 
+// ======== 环境变量配置（Vercel Cron 触发时使用）=======
+const CRON_CONFIG = {
+  // PushPlus Tokens，多个用逗号分隔
+  tokens: process.env.PUSHPLUS_TOKENS || '',
+  // 和风天气 Location ID
+  locationId: process.env.QWEATHER_LOCATION_ID || '101181502',
+  // 推送标题
+  title: process.env.PUSHPLUS_TITLE || '打卡提醒',
+  // 上班提醒内容（可选，不填则用默认）
+  morningContent: process.env.PUSHPLUS_MORNING_CONTENT || '',
+  // 下班提醒内容（可选，不填则用默认）
+  eveningContent: process.env.PUSHPLUS_EVENING_CONTENT || '',
+  // 特殊日期 JSON（可选）
+  specialDatesJson: process.env.SPECIAL_DATES_JSON || '',
+};
+
 const QWEATHER_API_KEY = '822391a0ebe540ef916c96afd0c21862';
 
 // ======== 特殊日期配置（支持 URL 参数覆盖）=======
@@ -462,18 +478,23 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ code: 405, msg: 'Method not allowed' });
 
-  // ---- 1. 解析参数 ----
-  const {
-    tokens,           // 多个 token 用逗号分隔
-    locationId,       // 和风天气 Location_ID
-    title = '打卡提醒',
-    morningContent,    // 上班提醒内容
-    eveningContent,    // 下班提醒内容
-    forceType,         // 可选：强制指定 morning / evening（测试用）
-    specialDatesJson,  // 可选：特殊日期 JSON {myBirthday, herBirthday, anniversary}
-  } = req.query;
+  // ---- 1. 解析参数（优先 URL 参数，其次环境变量）----
+  const urlTokens = req.query.tokens;
+  const urlLocationId = req.query.locationId;
+  const urlTitle = req.query.title;
+  const urlMorningContent = req.query.morningContent;
+  const urlEveningContent = req.query.eveningContent;
+  const urlSpecialDatesJson = req.query.specialDatesJson;
 
-  // 覆盖特殊日期（支持从 URL 参数传入）
+  // URL 参数优先，环境变量兜底
+  const tokens = urlTokens || CRON_CONFIG.tokens;
+  const locationId = urlLocationId || CRON_CONFIG.locationId;
+  const title = urlTitle || CRON_CONFIG.title;
+  const morningContent = urlMorningContent || CRON_CONFIG.morningContent;
+  const eveningContent = urlEveningContent || CRON_CONFIG.eveningContent;
+  const specialDatesJson = urlSpecialDatesJson || CRON_CONFIG.specialDatesJson;
+
+  // 覆盖特殊日期（支持从 URL 参数或环境变量传入）
   if (specialDatesJson) {
     try {
       const parsed = JSON.parse(decodeURIComponent(specialDatesJson));
@@ -484,6 +505,9 @@ export default async function handler(req, res) {
       console.warn('specialDatesJson 解析失败:', e.message);
     }
   }
+
+  // forceType 仅支持手动测试（URL 参数传来）
+  const forceType = req.query.forceType;
 
   if (!tokens) {
     return res.status(400).json({ code: 400, msg: '缺少 tokens 参数' });
