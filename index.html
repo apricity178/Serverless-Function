@@ -631,14 +631,14 @@
             <!-- 提醒内容 -->
             <div class="form-group">
                 <label>🌅 上班提醒内容（12:00 前发送）</label>
-                <textarea id="morningContent" placeholder="早上打卡提醒内容">宝贝，早上好呀~ ☀️
+                <textarea id="morningContent" placeholder="早上打卡提醒内容">老公/老婆，早上好呀~ ☀️
 记得打卡上班哦，新的一天加油！
 我会一直想你的~ 💕</textarea>
             </div>
 
             <div class="form-group">
                 <label>🌙 下班提醒内容（12:00 后发送）</label>
-                <textarea id="eveningContent" placeholder="晚上打卡提醒内容">宝贝，下班时间到啦~ 🌙
+                <textarea id="eveningContent" placeholder="晚上打卡提醒内容">老公/老婆，下班时间到啦~ 🌙
 记得打卡下班，今天辛苦了！
 回家好好休息，我在等你~ 💖</textarea>
             </div>
@@ -657,10 +657,10 @@
                 <label>🎲 每日随机提醒内容</label>
                 <div class="switch-container">
                     <label class="switch">
-                        <input type="checkbox" id="randomContentToggle">
+                        <input type="checkbox" id="randomContentToggle" checked>
                         <span class="slider"></span>
                     </label>
-                    <span class="switch-label" id="randomContentLabel">关闭（使用上方自定义内容）</span>
+                    <span class="switch-label active" id="randomContentLabel">开启（每天随机选择内置提醒，上下班各一条不同的小情话）</span>
                 </div>
                 <small>开启后，每天从内置的 8 条上下班提醒中随机选择一条发送</small>
             </div>
@@ -749,9 +749,9 @@
             location: '', // 天气预报地点（兼容旧版本，新版本使用 locationId）
             locationId: '', // 和风天气 Location_ID
             locationName: '', // 县区名称（用于显示）
-            morningContent: '宝贝，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕',
-            eveningContent: '宝贝，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💖',
-            useRandomContent: false, // 是否使用随机内容
+            morningContent: '老公/老婆，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕',
+            eveningContent: '老公/老婆，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💖',
+            useRandomContent: true, // 是否使用随机内容（默认开启）
             lastReminder: null,
             // 特殊日期配置
             specialDates: {
@@ -763,7 +763,7 @@
 
         // 内置上班提醒内容（8条）
         const MORNING_MESSAGES = [
-            '宝贝，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕',
+            '老公/老婆，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕',
             '亲爱的，该打卡上班啦~ 🌸\n今天也要元气满满哦！\n爱你~ 💖',
             '老婆大人，早上好~ 🌞\n记得打卡，开始美好的一天吧！\n我在家等你回来~ 💗',
             '早安，我的宝贝~ ☕\n记得打卡上班哦~\n今天也要开心，我会想你的~ 💓',
@@ -775,7 +775,7 @@
 
         // 内置下班提醒内容（8条）
         const EVENING_MESSAGES = [
-            '宝贝，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💕',
+            '老公/老婆，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💕',
             '亲爱的，该下班打卡啦~ 🌟\n辛苦一天了，放松一下吧~\n爱你哦~ 💖',
             '老婆，记得下班打卡哦~ 🏠\n工作辛苦了，马上就能休息啦！\n我在家里想你~ 💗',
             '下班时间到~ 🎉\n记得打卡，然后就可以放松啦！\n今天也要好好休息哦~ 💓',
@@ -1014,8 +1014,8 @@
                 // 恢复标题和内容
                 document.getElementById('title').value = config.title || '打卡提醒';
                 // 注意：不再恢复 document.getElementById('location')，因为已经改为三级联动
-                document.getElementById('morningContent').value = config.morningContent || '宝贝，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕';
-                document.getElementById('eveningContent').value = config.eveningContent || '宝贝，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💖';
+                document.getElementById('morningContent').value = config.morningContent || '老公/老婆，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕';
+                document.getElementById('eveningContent').value = config.eveningContent || '老公/老婆，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💖';
                 
                 // 恢复地点选择（根据 locationId）
                 if (config.locationId) {
@@ -1046,8 +1046,9 @@
                         `最近提醒：${new Date(config.lastReminder).toLocaleString()}`;
                 }
 
-                // 恢复随机内容开关
-                document.getElementById('randomContentToggle').checked = config.useRandomContent || false;
+                // 恢复随机内容开关（默认开启）
+                const toggle = document.getElementById('randomContentToggle');
+                toggle.checked = config.useRandomContent !== false;
                 updateRandomContentLabel();
 
                 // 恢复特殊日期
@@ -1094,8 +1095,8 @@
 
             config.title = document.getElementById('title').value.trim() || '打卡提醒';
             // 注意：locationId 和 locationName 已经在 onCountySelect() 中保存到 config 了
-            config.morningContent = document.getElementById('morningContent').value.trim() || '宝贝，早上好~ 记得打卡上班哦！';
-            config.eveningContent = document.getElementById('eveningContent').value.trim() || '宝贝，下班时间到啦~ 记得打卡下班！';
+            config.morningContent = document.getElementById('morningContent').value.trim() || '老公/老婆，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕';
+            config.eveningContent = document.getElementById('eveningContent').value.trim() || '老公/老婆，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💖';
             config.useRandomContent = document.getElementById('randomContentToggle').checked;
 
             // 收集时间
@@ -1175,7 +1176,7 @@
             const toggle = document.getElementById('randomContentToggle');
             const label = document.getElementById('randomContentLabel');
             if (toggle.checked) {
-                label.textContent = '开启（每天随机选择内置提醒）';
+                label.textContent = '开启（每天随机选择内置提醒，上下班各一条不同的小情话）';
                 label.classList.add('active');
             } else {
                 label.textContent = '关闭（使用上方自定义内容）';
@@ -1383,35 +1384,196 @@
             return '';
         }
 
-        // ======== 每日小情话 ========
-        const XIAOQINGHUA = [
-            '遇见你，是我这辈子最幸运的事 💕',
-            '我想你了，不止在每一个清晨和黄昏 💗',
-            '不管多晚，我都会等你回家 🌙',
-            '今天的你，也在闪闪发光呢 ✨',
-            '有你在的日子，连发呆都觉得幸福 🫶',
-            '我喜欢你，从心动到古稀 💖',
-            '想念不用藏起来，因为我想的每一个你 🌸',
-            '你是我的单曲循环，也是我的独家记忆 🎵',
-            '今天的你，比昨天的星星还耀眼 🌟',
-            '愿所有美好都如约而至，包括你 💌',
-            '和你在一起的每一天，都是最好的时光 🕊️',
-            '你是我疲惫生活里的那颗糖 🍬',
-            '想你的时候，连空气都是甜的 🍯',
-            '不管多大，你永远是我的小朋友 🧸',
-            '我不要世界和平，我只要你 💗',
-            '晚安，梦里见~ 🌙✨',
-            '今天也在想你，超大声的那种 📢💕',
-            '你是我的例外，也是我的偏爱 🏵️',
-            '想牵你的手，走完剩下的所有春秋 🌿',
-            '遇见你之后，我再也没羡慕过任何人 💫',
-            '你一笑，我的世界都亮了 🌈',
-            '余生很短，但和你在一起的日子我想慢慢过 🐢',
-            '想你想到睡不着，但很甜 💤💕',
-            '今天的你也辛苦了，好好休息 💝',
-            '不管明天怎样，今晚有我陪着你 🌃',
-            '爱你这件事，值得说一万遍 💋',
+        // ======== 节日小情话（按节日分类）=======
+        const FESTIVAL_XIAOQINGHUA = {
+            newyear: [
+                '🎊 新年第一天，有你在身边就是最好的开始~',
+                '🌅 元旦快乐！新的一年，和你一起走过每一天~',
+                '🎉 新年第一天，想对你说：遇见你，是我最大的幸运~',
+                '🥂 新年到！愿我们在新的一年里，依然甜蜜如初~',
+                '🎆 新年到！新的一年，陪你从日出到日落~',
+            ],
+            spring: [
+                '🧧 新春快乐！老公/老婆，新年要有新气象，但我的爱你永远不变~',
+                '🎊 过年啦！祝我们新年快乐，愿每一天都像今天一样幸福~',
+                '🧨 春节到！新的一年，继续牵着手往前走~',
+                '🏮 新春大吉！老公/老婆，过年也要甜甜蜜蜜哦~',
+                '🎇 除夕快乐！今晚有你，新年才完整~',
+            ],
+            valentine: [
+                '💝 情人节快乐！老公/老婆，我爱你，不止今天~',
+                '🌹 今天是情人节，想牵着你的手说：我爱你~',
+                '💕 情人节快乐！遇见你，是我最美的意外~',
+                '💗 今天是属于我们的节日，老公/老婆，节日快乐~',
+                '💘 情人节到了，想大声告诉你：我超爱你~',
+            ],
+            qixi: [
+                '🌜 七夕快乐！老公/老婆，今晚的星星都没你耀眼~',
+                '💫 七夕情人节，愿我们永远如今日般相爱~',
+                '🌙 七夕到了，牛郎织女都羡慕我们呢~',
+                '🐂 七夕快乐！不用隔河相望，我们天天在一起~',
+                '💝 今天是七夕，想和你一起看星星，想你~',
+            ],
+            '520': [
+                '💗 520！我爱你！老公/老婆，今天要甜一点~',
+                '💕 520快乐！想对你说的情话，今天说一百遍都不够~',
+                '💖 520到啦！我爱你，不止今天，每一天都是~',
+                '💓 520，老公/老婆，节日快乐！我超爱你的~',
+                '💘 今天520，想牵着你的手说：我好喜欢你~',
+            ],
+            '521': [
+                '💗 521！我爱你！老公/老婆，今天也要甜甜的~',
+                '💕 521快乐！我爱你这件事，值得说一万年~',
+                '💖 521到啦！每一天爱你都不够~',
+                '💓 521，我的唯一，我最爱的人，节日快乐~',
+                '💘 今天521，老公/老婆我爱你！超爱的那种~',
+            ],
+            midautumn: [
+                '🌕 中秋节快乐！月圆人团圆，有你在身边就是最好的团圆~',
+                '🥮 中秋到！想和你一起赏月，吃月饼，陪你~',
+                '🌝 中秋节快乐！今晚的月亮很圆，但不如你在我身边~',
+                '🏮 中秋快乐！月圆之夜，想和你一起看月亮~',
+                '🥮 中秋到！团圆的日子，有你才完整~',
+            ],
+            nationalday: [
+                '🏮 国庆节快乐！假期来啦，陪你的时间更多了~',
+                '🎉 祝我们国庆快乐！有你在，哪儿都是好风景~',
+                '🌟 国庆节到！可以一起出去浪啦~',
+                '🎊 国庆快乐！终于可以好好陪你了~',
+                '🌈 国庆假期，想和你一起看祖国的大好河山~',
+            ],
+            christmas: [
+                '🎄 圣诞节快乐！有你陪伴的每一天都是节日~',
+                '🎅 圣诞到！老公/老婆，节日快乐~想要什么礼物？',
+                '🎁 圣诞节快乐！遇见你，是我收到最好的礼物~',
+                '🔔 圣诞快乐！今晚有我陪，比圣诞老人还暖~',
+                '⭐ 圣诞节到！愿我们岁岁年年都像今天一样甜~',
+            ],
+            newyearseve: [
+                '🎆 跨年夜快乐！今年有你，明年也有你~',
+                '🎇 又一年过去了，谢谢你一直陪在我身边~',
+                '🥂 跨年夜！老公/老婆，新年快乐！我爱你~',
+                '🌟 今年的最后一刻，想和你一起倒数~',
+                '🎊 跨年夜！和你在一起的每一年，都是最好的一年~',
+            ],
+            mybirthday: [
+                '🎂 今天是你的生日！老公，生日快乐！我会一直爱你~',
+                '🎉 生日快乐！今天你是主角，要开开心心的哦~',
+                '🎁 老公生日快乐！新的一岁，我们继续一起走~',
+                '🌟 今天是你的大日子！生日快乐，我爱你~',
+                '🥳 老公生日到！祝最爱的人生日快乐，万事胜意~',
+            ],
+            herbirthday: [
+                '🎀 今天是老婆的生日！生日快乐，我的小公主~',
+                '🎉 老婆生日快乐！愿你永远像今天一样美丽快乐~',
+                '💐 生日快乐！今天你是最美的，全世界都是你的~',
+                '🎂 老婆，生日快乐！遇见你，是我最大的幸运~',
+                '🌹 今天是你的生日！老婆，我爱你，永远爱你~',
+            ],
+            anniversary: [
+                '💑 在一起纪念日快乐！老公/老婆，谢谢你陪我走到今天~',
+                '🎊 今天是我们的纪念日！回想这一天，全是幸福~',
+                '💕 纪念日快乐！和你在一起的每一天，都值得纪念~',
+                '🌸 今天是纪念日！老公/老婆，我爱你，一如既往~',
+                '💖 纪念日到！感谢遇见你，感谢爱上你，感谢你一直都在~',
+            ],
+        };
+
+        // ======== 日常小情话（上班/下班分开）=======
+        const XIAOQINGHUA_MORNING = [
+            '早安，老公/老婆~今天也是爱你的一天 💕',
+            '早安~新的一天开始了，想你 💗',
+            '早安呀~起床第一件事就是想你 ☀️',
+            '早上好~今天也要甜甜的哦 🌸',
+            '早安~我的老公/老婆，今天也要加油 💪',
+            '早安！今天天气很好，但不如你笑起来好看 🌞',
+            '早安呀~醒来第一个想到的是你 💭',
+            '早上好~新的一天，继续爱你 💕',
+            '早安！今天也在想你，超大声的那种 📢',
+            '早安呀~有你的早晨，连阳光都更温暖 🌅',
+            '早上好~老公/老婆，起床啦，新的一天开始啦 ☀️',
+            '早安~今天也要开开心心的，我在想你 💗',
+            '早安呀~睁开眼就想告诉你：我爱你 💖',
+            '早上好~今天的你，也在闪闪发光 ✨',
+            '早安~新的一天，先送一个早安吻 💋',
+            '早安呀~今天的你也很好看呢 🌸',
+            '早上好~想你的时候，连空气都是甜的 🍬',
+            '早安！不管多大，你永远是我的小朋友 🧸',
+            '早安~你是我疲惫生活里的那颗糖 💕',
+            '早上好~今天也要元气满满，我在想你 💗',
         ];
+
+        const XIAOQINGHUA_EVENING = [
+            '晚安，老公/老婆~今天也辛苦了 💤',
+            '晚安~下班了没？我在想你 🌙',
+            '晚上好~今天的你辛苦了，好好休息 🌟',
+            '晚安呀~不管多晚，我都会等你 🏠',
+            '晚上好~回家路上注意安全，我在想你 💗',
+            '晚安~今天辛苦了，早点休息哦 🌙',
+            '晚上好~工作一天累了吧，想抱抱你 💝',
+            '晚安呀~今晚做个好梦，梦里见 🌙✨',
+            '晚上好~辛苦了，我的宝贝 💕',
+            '晚安~回家路上小心，想你 🌙',
+            '晚上好~今天也想你了，超大声的那种 📢',
+            '晚安~你在身边的时候，连发呆都觉得幸福 🫶',
+            '晚上好~累了吧？今天你也很棒 💖',
+            '晚安呀~余生很短，但和你在一起的日子我想慢慢过 🐢',
+            '晚上好~不管明天怎样，今晚有我陪着你 🌃',
+            '晚安~想你想到睡不着，但很甜 💤💕',
+            '晚上好~今天的你也辛苦了，好好休息 💝',
+            '晚安~明天见，我最爱的人 🌙',
+            '晚上好~陪你从心动到古稀 💕',
+            '晚安呀~我不要世界和平，我只要你 💗',
+        ];
+
+        // ======== 获取节日+分时段小情话 ========
+        function getFestivalXiaoqinghua(type) {
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            const day = now.getDate();
+            const monthDay = `${month}-${day}`;
+
+            // 元旦
+            if (monthDay === '1-1') return pickOneFrom(FESTIVAL_XIAOQINGHUA.newyear, type);
+            // 情人节
+            if (monthDay === '2-14') return pickOneFrom(FESTIVAL_XIAOQINGHUA.valentine, type);
+            // 520
+            if (monthDay === '5-20') return pickOneFrom(FESTIVAL_XIAOQINGHUA['520'], type);
+            // 521
+            if (monthDay === '5-21') return pickOneFrom(FESTIVAL_XIAOQINGHUA['521'], type);
+            // 中秋（近似）
+            if (monthDay === '9-15' || monthDay === '9-16' || monthDay === '9-17') return pickOneFrom(FESTIVAL_XIAOQINGHUA.midautumn, type);
+            // 国庆
+            if (monthDay === '10-1') return pickOneFrom(FESTIVAL_XIAOQINGHUA.nationalday, type);
+            // 圣诞
+            if (monthDay === '12-25') return pickOneFrom(FESTIVAL_XIAOQINGHUA.christmas, type);
+            // 跨年夜
+            if (monthDay === '12-31') return pickOneFrom(FESTIVAL_XIAOQINGHUA.newyearseve, type);
+            // 春节期间（近似）
+            if ((month === 1 && day >= 21) || (month === 2 && day <= 5)) return pickOneFrom(FESTIVAL_XIAOQINGHUA.spring, type);
+            // 七夕（近似）
+            if (month === 8 && day >= 10 && day <= 14) return pickOneFrom(FESTIVAL_XIAOQINGHUA.qixi, type);
+
+            // 特殊日期
+            const year = now.getFullYear();
+            const sd = config.specialDates || {};
+            const [myMonth, myDay] = (sd.myBirthday || '10-23').split('-').map(Number);
+            if (month === myMonth && day === myDay) return pickOneFrom(FESTIVAL_XIAOQINGHUA.mybirthday, type);
+            const [herMonth, herDay] = (sd.herBirthday || '09-27').split('-').map(Number);
+            if (month === herMonth && day === herDay) return pickOneFrom(FESTIVAL_XIAOQINGHUA.herbirthday, type);
+            const [annYear, annMonth, annDay] = (sd.anniversary || '2025-08-20').split('-').map(Number);
+            if (month === annMonth && day === annDay) return pickOneFrom(FESTIVAL_XIAOQINGHUA.anniversary, type);
+
+            // 日常：上下班选不同
+            if (type === 'morning') return pickOneFrom(XIAOQINGHUA_MORNING, type);
+            return pickOneFrom(XIAOQINGHUA_EVENING, type);
+        }
+
+        function pickOneFrom(arr, type) {
+            const now = new Date();
+            const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate() + (type === 'evening' ? 1000 : 0);
+            return arr[seed % arr.length];
+        }
 
         // 格式化时间
         function formatTime(hours, minutes) {
@@ -1456,11 +1618,9 @@
             return lines.join(' | ');
         }
 
-        // 获取今日小情话（同一天固定）
-        function getTodaysXiaoqinghua() {
-            const now = new Date();
-            const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
-            return XIAOQINGHUA[seed % XIAOQINGHUA.length];
+        // 获取今日小情话（上下班不同）
+        function getTodaysXiaoqinghua(type) {
+            return getFestivalXiaoqinghua(type);
         }
 
         // 智能生成结合天气的贴心提醒内容
@@ -1585,8 +1745,9 @@
             // 特殊日期倒计时
             suggestions += '\n' + getSpecialDatesText() + '\n';
 
-            // 今日小情话
-            suggestions += '\n💌 ' + getTodaysXiaoqinghua();
+            // 今日小情话（上下班不同）
+            const xqhType = type === 'today' ? 'morning' : 'evening';
+            suggestions += '\n💌 ' + getTodaysXiaoqinghua(xqhType);
 
             // 组合最终内容
             const finalContent = baseContent + '\n\n' + weatherInfo + suggestions;
@@ -1817,6 +1978,12 @@
                 forceType: type,
             });
             if (config.locationId) params.set('locationId', config.locationId);
+
+            // 传递特殊日期配置给服务端（用于小情话节日判断）
+            if (config.specialDates) {
+                params.set('specialDatesJson', encodeURIComponent(JSON.stringify(config.specialDates)));
+            }
+
             if (type === 'morning' && config.morningContent) {
                 params.set('morningContent', encodeURIComponent(config.morningContent));
             }
@@ -1907,7 +2074,7 @@ jobs:
         // 快速填充上班提醒词
         function fillMorningContent() {
             const morningTexts = [
-                '宝贝，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕',
+                '老公/老婆，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕',
                 '亲爱的，该打卡上班啦~ 🌸\n今天也要元气满满哦！\n爱你~ 💖',
                 '老婆大人，早上好~ 🌞\n记得打卡，开始美好的一天吧！\n我在家等你回来~ 💗',
                 '早安，我的宝贝~ ☕\n记得打卡上班哦~\n今天也要开心，我会想你的~ 💓'
@@ -1920,7 +2087,7 @@ jobs:
         // 快速填充下班提醒词
         function fillEveningContent() {
             const eveningTexts = [
-                '宝贝，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💕',
+                '老公/老婆，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💕',
                 '亲爱的，该下班打卡啦~ 🌟\n辛苦一天了，放松一下吧~\n爱你哦~ 💖',
                 '老婆，记得下班打卡哦~ 🏠\n工作辛苦了，马上就能休息啦！\n我在家里想你~ 💗',
                 '下班时间到~ 🎉\n记得打卡，然后就可以放松啦！\n今天也要好好休息哦~ 💓'

@@ -4,42 +4,227 @@
 
 const QWEATHER_API_KEY = '822391a0ebe540ef916c96afd0c21862';
 
-// ======== 特殊日期配置 ========
-const SPECIAL_DATES = {
-  myBirthday: '10-23',         // 你的生日（月-日，农历0911→公历10月23日）
-  herBirthday: '09-27',        // 她的生日（月-日，农历0727→公历9月27日）
-  anniversary: '2025-08-20',   // 在一起纪念日（YYYY-MM-DD）
+// ======== 特殊日期配置（支持 URL 参数覆盖）=======
+let SPECIAL_DATES = {
+  myBirthday: '10-23',
+  herBirthday: '09-27',
+  anniversary: '2025-08-20',
 };
 
-// ======== 每日小情话 ========
-const XIAOQINGHUA = [
-  '遇见你，是我这辈子最幸运的事 💕',
-  '我想你了，不止在每一个清晨和黄昏 💗',
-  '不管多晚，我都会等你回家 🌙',
-  '今天的你，也在闪闪发光呢 ✨',
-  '有你在的日子，连发呆都觉得幸福 🫶',
-  '我喜欢你，从心动到古稀 💖',
-  '想念不用藏起来，因为我想的每一个你 🌸',
-  '你是我的单曲循环，也是我的独家记忆 🎵',
-  '今天的你，比昨天的星星还耀眼 🌟',
-  '愿所有美好都如约而至，包括你 💌',
-  '和你在一起的每一天，都是最好的时光 🕊️',
-  '你是我疲惫生活里的那颗糖 🍬',
-  '想你的时候，连空气都是甜的 🍯',
-  '不管多大，你永远是我的小朋友 🧸',
-  '我不要世界和平，我只要你 💗',
-  '晚安，梦里见~ 🌙✨',
-  '今天也在想你，超大声的那种 📢💕',
-  '你是我的例外，也是我的偏爱 🏵️',
-  '想牵你的手，走完剩下的所有春秋 🌿',
-  '遇见你之后，我再也没羡慕过任何人 💫',
-  '你一笑，我的世界都亮了 🌈',
-  '余生很短，但和你在一起的日子我想慢慢过 🐢',
-  '想你想到睡不着，但很甜 💤💕',
-  '今天的你也辛苦了，好好休息 💝',
-  '不管明天怎样，今晚有我陪着你 🌃',
-  '爱你这件事，值得说一万遍 💋',
+// ======== 节日小情话（按节日分类）=======
+const FESTIVAL_XIAOQINGHUA = {
+  // 元旦
+  newyear: [
+    '🎊 新年第一天，有你在身边就是最好的开始~',
+    '🌅 元旦快乐！新的一年，和你一起走过每一天~',
+    '🎉 新年第一天，想对你说：遇见你，是我最大的幸运~',
+    '🥂 新年好呀！愿我们在新的一年里，依然甜蜜如初~',
+    '🎆 新年到！新的一年，陪你从日出到日落~',
+  ],
+  // 春节
+  spring: [
+    '🧧 新春快乐！老公/老婆，新年要有新气象，但我的爱你永远不变~',
+    '🎊 过年啦！祝我们新年快乐，愿每一天都像今天一样幸福~',
+    '🧨 春节到！新的一年，继续牵着手往前走~',
+    '🏮 新春大吉！老公/老婆，过年也要甜甜蜜蜜哦~',
+    '🎇 除夕快乐！今晚有你，新年才完整~',
+  ],
+  // 情人节
+  valentine: [
+    '💝 情人节快乐！老公/老婆，我爱你，不止今天~',
+    '🌹 今天是情人节，想牵着你的手说：我爱你~',
+    '💕 情人节快乐！遇见你，是我最美的意外~',
+    '💗 今天是属于我们的节日，老公/老婆，节日快乐~',
+    '💘 情人节到了，想大声告诉你：我超爱你~',
+  ],
+  // 七夕
+  qixi: [
+    '🌜 七夕快乐！老公/老婆，今晚的星星都没你耀眼~',
+    '💫 七夕情人节，愿我们永远如今日般相爱~',
+    '🌙 七夕到了，牛郎织女都羡慕我们呢~',
+    '🐂 七夕快乐！不用隔河相望，我们天天在一起~',
+    '💝 今天是七夕，想和你一起看星星，想你~',
+  ],
+  // 520
+  '520': [
+    '💗 520！我爱你！老公/老婆，今天要甜一点~',
+    '💕 520快乐！想对你说的情话，今天说一百遍都不够~',
+    '💖 520到啦！我爱你，不止今天，每一天都是~',
+    '💓 520，老公/老婆，节日快乐！我超爱你的~',
+    '💘 今天520，想牵着你的手说：我好喜欢你~',
+  ],
+  // 521
+  '521': [
+    '💗 521！我爱你！老公/老婆，今天也要甜甜的~',
+    '💕 521快乐！我爱你这件事，值得说一万年~',
+    '💖 521到啦！每一天爱你都不够~',
+    '💓 521，我的唯一，我最爱的人，节日快乐~',
+    '💘 今天521，老公/老婆我爱你！超爱的那种~',
+  ],
+  // 中秋
+  midautumn: [
+    '🌕 中秋节快乐！月圆人团圆，有你在身边就是最好的团圆~',
+    '🥮 中秋到！想和你一起赏月，吃月饼，陪你~',
+    '🌝 中秋节快乐！今晚的月亮很圆，但不如你在我身边~',
+    '🏮 中秋快乐！月圆之夜，想和你一起看月亮~',
+    '🥮 中秋到！团圆的日子，有你才完整~',
+  ],
+  // 国庆
+  nationalday: [
+    '🏮 国庆节快乐！假期来啦，陪你的时间更多了~',
+    '🎉 祝我们国庆快乐！有你在，哪儿都是好风景~',
+    '🌟 国庆节到！可以一起出去浪啦~',
+    '🎊 国庆快乐！终于可以好好陪你了~',
+    '🌈 国庆假期，想和你一起看祖国的大好河山~',
+  ],
+  // 圣诞
+  christmas: [
+    '🎄 圣诞节快乐！有你陪伴的每一天都是节日~',
+    '🎅 圣诞到！老公/老婆，节日快乐~想要什么礼物？',
+    '🎁 圣诞节快乐！遇见你，是我收到最好的礼物~',
+    '🔔 圣诞快乐！今晚有我陪，比圣诞老人还暖~',
+    '⭐ 圣诞节到！愿我们岁岁年年都像今天一样甜~',
+  ],
+  // 跨年夜
+  newyearseve: [
+    '🎆 跨年夜快乐！今年有你，明年也有你~',
+    '🎇 又一年过去了，谢谢你一直陪在我身边~',
+    '🥂 跨年夜！老公/老婆，新年快乐！我爱你~',
+    '🌟 今年的最后一刻，想和你一起倒数~',
+    '🎊 跨年夜！和你在一起的每一年，都是最好的一年~',
+  ],
+  // 老公生日
+  mybirthday: [
+    '🎂 今天是你的生日！老公，生日快乐！我会一直爱你~',
+    '🎉 生日快乐！今天你是主角，要开开心心的哦~',
+    '🎁 老公生日快乐！新的一岁，我们继续一起走~',
+    '🌟 今天是你的大日子！生日快乐，我爱你~',
+    '🥳 老公生日到！祝最爱的人生日快乐，万事胜意~',
+  ],
+  // 老婆生日
+  herbirthday: [
+    '🎀 今天是老婆的生日！生日快乐，我的小公主~',
+    '🎉 老婆生日快乐！愿你永远像今天一样美丽快乐~',
+    '💐 生日快乐！今天你是最美的，全世界都是你的~',
+    '🎂 老婆，生日快乐！遇见你，是我最大的幸运~',
+    '🌹 今天是你的生日！老婆，我爱你，永远爱你~',
+  ],
+  // 在一起纪念日
+  anniversary: [
+    '💑 在一起纪念日快乐！老公/老婆，谢谢你陪我走到今天~',
+    '🎊 今天是我们的纪念日！回想这一天，全是幸福~',
+    '💕 纪念日快乐！和你在一起的每一天，都值得纪念~',
+    '🌸 今天是纪念日！老公/老婆，我爱你，一如既往~',
+    '💖 纪念日到！感谢遇见你，感谢爱上你，感谢你一直都在~',
+  ],
+};
+
+// ======== 日常小情话（上班/下班分开）=======
+const XIAOQINGHUA_MORNING = [
+  '早安，老公/老婆~今天也是爱你的一天 💕',
+  '早安~新的一天开始了，想你 💗',
+  '早安呀~起床第一件事就是想你 ☀️',
+  '早上好~今天也要甜甜的哦 🌸',
+  '早安~我的老公/老婆，今天也要加油 💪',
+  '早安！今天天气很好，但不如你笑起来好看 🌞',
+  '早安呀~醒来第一个想到的是你 💭',
+  '早上好~新的一天，继续爱你 💕',
+  '早安！今天也在想你，超大声的那种 📢',
+  '早安呀~有你的早晨，连阳光都更温暖 🌅',
+  '早上好~老公/老婆，起床啦，新的一天开始啦 ☀️',
+  '早安~今天也要开开心心的，我在想你 💗',
+  '早安呀~睁开眼就想告诉你：我爱你 💖',
+  '早上好~今天的你也很好看呢 🌸',
+  '早安~新的一天，先送一个早安吻 💋',
+  '早安呀~今天的你，也在闪闪发光 ✨',
+  '早上好~想你的时候，连空气都是甜的 🍬',
+  '早安！不管多大，你永远是我的小朋友 🧸',
+  '早安~你是我疲惫生活里的那颗糖 💕',
+  '早上好~今天也要元气满满，我在想你 💗',
 ];
+
+const XIAOQINGHUA_EVENING = [
+  '晚安，老公/老婆~今天也辛苦了 💤',
+  '晚安~下班了没？我在想你 🌙',
+  '晚上好~今天的你辛苦了，好好休息 🌟',
+  '晚安呀~不管多晚，我都会等你 🏠',
+  '晚上好~回家路上注意安全，我在想你 💗',
+  '晚安~今天辛苦了，早点休息哦 🌙',
+  '晚上好~工作一天累了吧，想抱抱你 💝',
+  '晚安呀~今晚做个好梦，梦里见 🌙✨',
+  '晚上好~辛苦了，我的宝贝 💕',
+  '晚安~回家路上小心，想你 🌙',
+  '晚上好~今天也想你了，超大声的那种 📢',
+  '晚安~你在身边的时候，连发呆都觉得幸福 🫶',
+  '晚上好~累了吧？今天你也很棒 💖',
+  '晚安呀~余生很短，但和你在一起的日子我想慢慢过 🐢',
+  '晚上好~不管明天怎样，今晚有我陪着你 🌃',
+  '晚安~想你想到睡不着，但很甜 💤💕',
+  '晚上好~今天的你也辛苦了，好好休息 💝',
+  '晚安~明天见，我最爱的人 🌙',
+  '晚上好~陪你从心动到古稀 💕',
+  '晚安呀~我不要世界和平，我只要你 💗',
+];
+
+// ======== 融合节日+日常小情话 ========
+function getFestivalXiaoqinghua(now, type) {
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  const monthDay = `${month}-${day}`;
+  const weekday = now.getDay();
+
+  // 检查今天是什么节日
+  // 元旦
+  if (monthDay === '1-1') return pickOne(FESTIVAL_XIAOQINGHUA.newyear, now, type);
+  // 情人节
+  if (monthDay === '2-14') return pickOne(FESTIVAL_XIAOQINGHUA.valentine, now, type);
+  // 520
+  if (monthDay === '5-20') return pickOne(FESTIVAL_XIAOQINGHUA['520'], now, type);
+  // 521
+  if (monthDay === '5-21') return pickOne(FESTIVAL_XIAOQINGHUA['521'], now, type);
+  // 中秋（农历八月十五≈公历9月）
+  if (monthDay === '9-15' || monthDay === '9-16' || monthDay === '9-17') return pickOne(FESTIVAL_XIAOQINGHUA.midautumn, now, type);
+  // 国庆
+  if (monthDay === '10-1') return pickOne(FESTIVAL_XIAOQINGHUA.nationalday, now, type);
+  // 圣诞
+  if (monthDay === '12-25') return pickOne(FESTIVAL_XIAOQINGHUA.christmas, now, type);
+  // 跨年夜
+  if (monthDay === '12-31') return pickOne(FESTIVAL_XIAOQINGHUA.newyearseve, now, type);
+
+  // 检查特殊日期
+  const year = now.getFullYear();
+  // 老公生日
+  const [myMonth, myDay] = SPECIAL_DATES.myBirthday.split('-').map(Number);
+  if (month === myMonth && day === myDay) return pickOne(FESTIVAL_XIAOQINGHUA.mybirthday, now, type);
+  // 老婆生日
+  const [herMonth, herDay] = SPECIAL_DATES.herBirthday.split('-').map(Number);
+  if (month === herMonth && day === herDay) return pickOne(FESTIVAL_XIAOQINGHUA.herbirthday, now, type);
+  // 在一起纪念日
+  const [annYear, annMonth, annDay] = SPECIAL_DATES.anniversary.split('-').map(Number);
+  if (month === annMonth && day === annDay) return pickOne(FESTIVAL_XIAOQINGHUA.anniversary, now, type);
+
+  // 春节期间（近似：1月21日-2月5日左右）
+  if ((month === 1 && day >= 21) || (month === 2 && day <= 5)) {
+    return pickOne(FESTIVAL_XIAOQINGHUA.spring, now, type);
+  }
+  // 七夕近似（农历七月初七≈公历8月）
+  if (month === 8 && (day >= 10 && day <= 14)) {
+    return pickOne(FESTIVAL_XIAOQINGHUA.qixi, now, type);
+  }
+
+  // 日常：根据上下班选不同的情话
+  if (type === 'morning') {
+    return pickOne(XIAOQINGHUA_MORNING, now, type);
+  } else {
+    return pickOne(XIAOQINGHUA_EVENING, now, type);
+  }
+}
+
+function pickOne(arr, now, type) {
+  // 用日期+上下班类型作为seed，保证每天固定且上下班不同
+  const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate() + (type === 'evening' ? 1000 : 0);
+  return arr[seed % arr.length];
+}
 
 // ======== 工具函数 ========
 
@@ -93,11 +278,9 @@ function getSpecialDatesText(now) {
   return lines.join(' | ');
 }
 
-// 获取今日小情话
-function getTodaysXiaoqinghua(now) {
-  const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
-  const index = seed % XIAOQINGHUA.length;
-  return XIAOQINGHUA[index];
+// 获取今日小情话（根据上下班类型，返回不同的内容）
+function getTodaysXiaoqinghua(now, type) {
+  return getFestivalXiaoqinghua(now, type);
 }
 
 // 生成贴心天气提醒内容（与前端 generateSmartContent 逻辑一致）
@@ -222,8 +405,8 @@ function buildWeatherText(baseContent, weatherData, type) {
   const specialDatesText = getSpecialDatesText(getChinaTime());
   suggestions += '\n' + specialDatesText + '\n';
 
-  // ---- 今日小情话 ----
-  const xqh = getTodaysXiaoqinghua(getChinaTime());
+  // ---- 今日小情话（上下班不同）----
+  const xqh = getTodaysXiaoqinghua(getChinaTime(), type === 'today' ? 'morning' : 'evening');
   suggestions += '\n💌 ' + xqh;
 
   return baseContent + '\n\n' + weatherInfo + suggestions;
@@ -284,10 +467,23 @@ export default async function handler(req, res) {
     tokens,           // 多个 token 用逗号分隔
     locationId,       // 和风天气 Location_ID
     title = '打卡提醒',
-    morningContent,   // 上班提醒内容
-    eveningContent,   // 下班提醒内容
-    forceType,        // 可选：强制指定 morning / evening（测试用）
+    morningContent,    // 上班提醒内容
+    eveningContent,    // 下班提醒内容
+    forceType,         // 可选：强制指定 morning / evening（测试用）
+    specialDatesJson,  // 可选：特殊日期 JSON {myBirthday, herBirthday, anniversary}
   } = req.query;
+
+  // 覆盖特殊日期（支持从 URL 参数传入）
+  if (specialDatesJson) {
+    try {
+      const parsed = JSON.parse(decodeURIComponent(specialDatesJson));
+      if (parsed.myBirthday) SPECIAL_DATES.myBirthday = parsed.myBirthday;
+      if (parsed.herBirthday) SPECIAL_DATES.herBirthday = parsed.herBirthday;
+      if (parsed.anniversary) SPECIAL_DATES.anniversary = parsed.anniversary;
+    } catch (e) {
+      console.warn('specialDatesJson 解析失败:', e.message);
+    }
+  }
 
   if (!tokens) {
     return res.status(400).json({ code: 400, msg: '缺少 tokens 参数' });
@@ -314,8 +510,8 @@ export default async function handler(req, res) {
   const weatherType = isMorning ? 'today' : 'tomorrow';
 
   // 默认提醒内容
-  const defaultMorning = '宝贝，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕';
-  const defaultEvening = '宝贝，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💖';
+  const defaultMorning = '老公/老婆，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕';
+  const defaultEvening = '老公/老婆，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💖';
 
   let baseContent = isMorning
     ? (morningContent ? decodeURIComponent(morningContent) : defaultMorning)
