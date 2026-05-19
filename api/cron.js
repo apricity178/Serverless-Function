@@ -4,6 +4,43 @@
 
 const QWEATHER_API_KEY = '822391a0ebe540ef916c96afd0c21862';
 
+// ======== 特殊日期配置 ========
+const SPECIAL_DATES = {
+  myBirthday: '10-23',         // 你的生日（月-日，农历0911→公历10月23日）
+  herBirthday: '09-27',        // 她的生日（月-日，农历0727→公历9月27日）
+  anniversary: '2025-08-20',   // 在一起纪念日（YYYY-MM-DD）
+};
+
+// ======== 每日小情话 ========
+const XIAOQINGHUA = [
+  '遇见你，是我这辈子最幸运的事 💕',
+  '我想你了，不止在每一个清晨和黄昏 💗',
+  '不管多晚，我都会等你回家 🌙',
+  '今天的你，也在闪闪发光呢 ✨',
+  '有你在的日子，连发呆都觉得幸福 🫶',
+  '我喜欢你，从心动到古稀 💖',
+  '想念不用藏起来，因为我想的每一个你 🌸',
+  '你是我的单曲循环，也是我的独家记忆 🎵',
+  '今天的你，比昨天的星星还耀眼 🌟',
+  '愿所有美好都如约而至，包括你 💌',
+  '和你在一起的每一天，都是最好的时光 🕊️',
+  '你是我疲惫生活里的那颗糖 🍬',
+  '想你的时候，连空气都是甜的 🍯',
+  '不管多大，你永远是我的小朋友 🧸',
+  '我不要世界和平，我只要你 💗',
+  '晚安，梦里见~ 🌙✨',
+  '今天也在想你，超大声的那种 📢💕',
+  '你是我的例外，也是我的偏爱 🏵️',
+  '想牵你的手，走完剩下的所有春秋 🌿',
+  '遇见你之后，我再也没羡慕过任何人 💫',
+  '你一笑，我的世界都亮了 🌈',
+  '余生很短，但和你在一起的日子我想慢慢过 🐢',
+  '想你想到睡不着，但很甜 💤💕',
+  '今天的你也辛苦了，好好休息 💝',
+  '不管明天怎样，今晚有我陪着你 🌃',
+  '爱你这件事，值得说一万遍 💋',
+];
+
 // ======== 工具函数 ========
 
 function formatTime(date) {
@@ -15,6 +52,52 @@ function getChinaTime() {
   const now = new Date();
   const utc = now.getTime() + now.getTimezoneOffset() * 60000;
   return new Date(utc + 8 * 3600000);
+}
+
+// 计算特殊日期倒计时
+function getSpecialDatesText(now) {
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const todayStr = `${year}-${month}-${day}`;
+
+  let lines = [];
+
+  // 在一起纪念日
+  const [annYear, annMonth, annDay] = SPECIAL_DATES.anniversary.split('-').map(Number);
+  const annThisYear = new Date(year, annMonth - 1, annDay);
+  const annBase = new Date(annYear, annMonth - 1, annDay);
+  const daysTogether = Math.floor((now - annBase) / 86400000);
+  lines.push(`💑 在一起 ${daysTogether} 天啦~`);
+
+  // 你的生日倒计时
+  const [myMonth, myDay] = SPECIAL_DATES.myBirthday.split('-').map(Number);
+  let myBdayThisYear = new Date(year, myMonth - 1, myDay);
+  if (now > myBdayThisYear) myBdayThisYear = new Date(year + 1, myMonth - 1, myDay);
+  const daysToMyBday = Math.ceil((myBdayThisYear - now) / 86400000);
+  const myBdayLabel = daysToMyBday === 0 ? '🎂 今天是宝的生日！生日快乐呀！🎉'
+    : daysToMyBday === 1 ? '🎂 明天是宝的生日哦，准备好了吗！'
+    : `🎂 宝的生日还有 ${daysToMyBday} 天~`;
+  lines.push(myBdayLabel);
+
+  // 她的生日倒计时
+  const [herMonth, herDay] = SPECIAL_DATES.herBirthday.split('-').map(Number);
+  let herBdayThisYear = new Date(year, herMonth - 1, herDay);
+  if (now > herBdayThisYear) herBdayThisYear = new Date(year + 1, herMonth - 1, herDay);
+  const daysToHerBday = Math.ceil((herBdayThisYear - now) / 86400000);
+  const herBdayLabel = daysToHerBday === 0 ? '🎀 今天是她生日！记得送上祝福呀~ 💐'
+    : daysToHerBday === 1 ? '🎀 明天是她生日哦，准备好惊喜了吗！'
+    : `🎀 她的生日还有 ${daysToHerBday} 天~`;
+  lines.push(herBdayLabel);
+
+  return lines.join(' | ');
+}
+
+// 获取今日小情话
+function getTodaysXiaoqinghua(now) {
+  const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+  const index = seed % XIAOQINGHUA.length;
+  return XIAOQINGHUA[index];
 }
 
 // 生成贴心天气提醒内容（与前端 generateSmartContent 逻辑一致）
@@ -117,11 +200,31 @@ function buildWeatherText(baseContent, weatherData, type) {
   }
 
   // ---- 风力提醒 ----
+  // ---- 风力提醒 ----
   if (windScale >= 7) {
     suggestions += `   💨 风力较大（${windScale}级），注意防风，远离广告牌/临时搭建物~\n`;
   } else if (windScale >= 5) {
     suggestions += `   💨 风力较大（${windScale}级），注意防风保暖~\n`;
   }
+
+  // ---- 早晚温差提醒 ----
+  if (weatherData.daily) {
+    const tomorrowData = weatherData.daily[0];
+    const tempMin = parseInt(tomorrowData.tempMin);
+    const tempMax = parseInt(tomorrowData.tempMax);
+    const tempDiff = tempMax - tempMin;
+    if (tempDiff >= 10) {
+      suggestions += `   🌡️ 温差较大（${tempDiff}°C），早晚记得添衣保暖~\n`;
+    }
+  }
+
+  // ---- 特殊日期倒计时 ----
+  const specialDatesText = getSpecialDatesText(getChinaTime());
+  suggestions += '\n' + specialDatesText + '\n';
+
+  // ---- 今日小情话 ----
+  const xqh = getTodaysXiaoqinghua(getChinaTime());
+  suggestions += '\n💌 ' + xqh;
 
   return baseContent + '\n\n' + weatherInfo + suggestions;
 }

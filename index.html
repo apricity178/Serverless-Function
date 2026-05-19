@@ -579,6 +579,31 @@
                 </div>
             </div>
 
+            <!-- 特殊日期 -->
+            <div class="form-group" style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 14px; margin-top: 6px;">
+                <label style="margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    💝 特殊日期
+                    <small style="opacity: 0.7; font-weight: normal;">（用于生日/纪念日倒计时，自动显示在贴心提醒里）</small>
+                </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div>
+                        <small style="opacity: 0.8;">🎂 你的生日（农历转公历月-日）</small>
+                        <input type="text" id="myBirthday" value="10-23" placeholder="如 10-23"
+                            style="font-size: 13px; padding: 6px 10px; border-radius: 8px; border: none; background: rgba(255,255,255,0.15); color: white; width: 100%;">
+                    </div>
+                    <div>
+                        <small style="opacity: 0.8;">🎀 她的生日（农历转公历月-日）</small>
+                        <input type="text" id="herBirthday" value="09-27" placeholder="如 09-27"
+                            style="font-size: 13px; padding: 6px 10px; border-radius: 8px; border: none; background: rgba(255,255,255,0.15); color: white; width: 100%;">
+                    </div>
+                </div>
+                <div style="margin-top: 8px;">
+                    <small style="opacity: 0.8;">💑 在一起纪念日（YYYY-MM-DD）</small>
+                    <input type="text" id="anniversary" value="2025-08-20" placeholder="如 2025-08-20"
+                        style="font-size: 13px; padding: 6px 10px; border-radius: 8px; border: none; background: rgba(255,255,255,0.15); color: white; width: 100%;">
+                </div>
+            </div>
+
             <!-- 提醒标题 -->
             <div class="form-group">
                 <label>提醒标题（上班/下班通用）</label>
@@ -727,7 +752,13 @@
             morningContent: '宝贝，早上好呀~ ☀️\n记得打卡上班哦，新的一天加油！\n我会一直想你的~ 💕',
             eveningContent: '宝贝，下班时间到啦~ 🌙\n记得打卡下班，今天辛苦了！\n回家好好休息，我在等你~ 💖',
             useRandomContent: false, // 是否使用随机内容
-            lastReminder: null
+            lastReminder: null,
+            // 特殊日期配置
+            specialDates: {
+                myBirthday: '10-23',     // 你的生日（月-日，农历0911）
+                herBirthday: '09-27',    // 她的生日（月-日，农历0727）
+                anniversary: '2025-08-20' // 在一起纪念日（YYYY-MM-DD）
+            }
         };
 
         // 内置上班提醒内容（8条）
@@ -1018,6 +1049,13 @@
                 // 恢复随机内容开关
                 document.getElementById('randomContentToggle').checked = config.useRandomContent || false;
                 updateRandomContentLabel();
+
+                // 恢复特殊日期
+                if (config.specialDates) {
+                    document.getElementById('myBirthday').value = config.specialDates.myBirthday || '10-23';
+                    document.getElementById('herBirthday').value = config.specialDates.herBirthday || '09-27';
+                    document.getElementById('anniversary').value = config.specialDates.anniversary || '2025-08-20';
+                }
             }
         }
 
@@ -1091,6 +1129,13 @@
                     return;
                 }
             }
+
+            // 收集特殊日期
+            config.specialDates = {
+                myBirthday: document.getElementById('myBirthday').value.trim() || '10-23',
+                herBirthday: document.getElementById('herBirthday').value.trim() || '09-27',
+                anniversary: document.getElementById('anniversary').value.trim() || '2025-08-20'
+            };
 
             localStorage.setItem('punchReminderConfig', JSON.stringify(config));
             showToast('✅ 配置已保存');
@@ -1338,9 +1383,84 @@
             return '';
         }
 
+        // ======== 每日小情话 ========
+        const XIAOQINGHUA = [
+            '遇见你，是我这辈子最幸运的事 💕',
+            '我想你了，不止在每一个清晨和黄昏 💗',
+            '不管多晚，我都会等你回家 🌙',
+            '今天的你，也在闪闪发光呢 ✨',
+            '有你在的日子，连发呆都觉得幸福 🫶',
+            '我喜欢你，从心动到古稀 💖',
+            '想念不用藏起来，因为我想的每一个你 🌸',
+            '你是我的单曲循环，也是我的独家记忆 🎵',
+            '今天的你，比昨天的星星还耀眼 🌟',
+            '愿所有美好都如约而至，包括你 💌',
+            '和你在一起的每一天，都是最好的时光 🕊️',
+            '你是我疲惫生活里的那颗糖 🍬',
+            '想你的时候，连空气都是甜的 🍯',
+            '不管多大，你永远是我的小朋友 🧸',
+            '我不要世界和平，我只要你 💗',
+            '晚安，梦里见~ 🌙✨',
+            '今天也在想你，超大声的那种 📢💕',
+            '你是我的例外，也是我的偏爱 🏵️',
+            '想牵你的手，走完剩下的所有春秋 🌿',
+            '遇见你之后，我再也没羡慕过任何人 💫',
+            '你一笑，我的世界都亮了 🌈',
+            '余生很短，但和你在一起的日子我想慢慢过 🐢',
+            '想你想到睡不着，但很甜 💤💕',
+            '今天的你也辛苦了，好好休息 💝',
+            '不管明天怎样，今晚有我陪着你 🌃',
+            '爱你这件事，值得说一万遍 💋',
+        ];
+
         // 格式化时间
         function formatTime(hours, minutes) {
             return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        // 计算特殊日期倒计时
+        function getSpecialDatesText() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+
+            const sd = config.specialDates || {};
+            let lines = [];
+
+            // 在一起纪念日
+            const annStr = sd.anniversary || '2025-08-20';
+            const [annYear, annMonth, annDay] = annStr.split('-').map(Number);
+            const annBase = new Date(annYear, annMonth - 1, annDay);
+            const daysTogether = Math.floor((now - annBase) / 86400000);
+            lines.push('💑 在一起 ' + daysTogether + ' 天啦~');
+
+            // 你的生日倒计时
+            const [myMonth, myDay] = (sd.myBirthday || '10-23').split('-').map(Number);
+            let myBday = new Date(year, myMonth - 1, myDay);
+            if (now > myBday) myBday = new Date(year + 1, myMonth - 1, myDay);
+            const daysToMyBday = Math.ceil((myBday - now) / 86400000);
+            if (daysToMyBday === 0) lines.push('🎂 今天是宝的生日！生日快乐呀！🎉');
+            else if (daysToMyBday === 1) lines.push('🎂 明天是宝的生日哦，准备好了吗！');
+            else lines.push('🎂 宝的生日还有 ' + daysToMyBday + ' 天~');
+
+            // 她的生日倒计时
+            const [herMonth, herDay] = (sd.herBirthday || '09-27').split('-').map(Number);
+            let herBday = new Date(year, herMonth - 1, herDay);
+            if (now > herBday) herBday = new Date(year + 1, herMonth - 1, herDay);
+            const daysToHerBday = Math.ceil((herBday - now) / 86400000);
+            if (daysToHerBday === 0) lines.push('🎀 今天是她生日！记得送上祝福呀~ 💐');
+            else if (daysToHerBday === 1) lines.push('🎀 明天是她生日哦，准备好惊喜了吗！');
+            else lines.push('🎀 她的生日还有 ' + daysToHerBday + ' 天~');
+
+            return lines.join(' | ');
+        }
+
+        // 获取今日小情话（同一天固定）
+        function getTodaysXiaoqinghua() {
+            const now = new Date();
+            const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+            return XIAOQINGHUA[seed % XIAOQINGHUA.length];
         }
 
         // 智能生成结合天气的贴心提醒内容
@@ -1452,10 +1572,25 @@
             } else if (windScale >= 5) {
                 suggestions += '   💨 风力较大（' + windScale + '级），注意防风保暖~\n';
             }
-            
+
+            // 早晚温差提醒（明日）
+            if (type === 'tomorrow' && weatherData.daily) {
+                const tomorrowData = weatherData.daily[0];
+                const tempDiff = parseInt(tomorrowData.tempMax) - parseInt(tomorrowData.tempMin);
+                if (tempDiff >= 10) {
+                    suggestions += '   🌡️ 温差较大（' + tempDiff + '°C），早晚记得添衣保暖~\n';
+                }
+            }
+
+            // 特殊日期倒计时
+            suggestions += '\n' + getSpecialDatesText() + '\n';
+
+            // 今日小情话
+            suggestions += '\n💌 ' + getTodaysXiaoqinghua();
+
             // 组合最终内容
             const finalContent = baseContent + '\n\n' + weatherInfo + suggestions;
-            
+
             return finalContent;
         }
 
