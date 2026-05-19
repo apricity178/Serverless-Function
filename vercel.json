@@ -13,10 +13,8 @@
     { "src": "/api/cron", "dest": "/api/cron.js" },
     { "src": "/(.*)", "dest": "/$1" }
   ],
-  "crons": {
-    "up": [
-      { "path": "/api/cron", "schedule": "0 8 * * *" },
-      { "path": "/api/cron", "schedule": "0 18 * * *" }
-    ]
-  }
+  "crons": [
+    { "path": "/api/cron", "schedule": "0 8 * * *" },
+    { "path": "/api/cron", "schedule": "0 18 * * *" }
+  ]
 }
